@@ -1,0 +1,169 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
+    "title": "stegiopast/wf-nanoribolyzer",
+    "workflow_title": "NanoRibolyzer",
+    "description": "Repository for a nanopore sequencing based ribosomal RNA analysis pipeline",
+    "url": "https://github.com/stegiopast/wf-nanoribolyzer",
+    "type": "object",
+    "definitions": {
+        "input": {
+            "title": "Input Options",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Parameters for finding and handling input data for NanoRibolyzer.",
+            "properties": {
+                "sample_folder": {
+                    "type": "string",
+                    "format": "path",
+                    "title": "Pod5 folder",
+                    "description": "Path to folder containing pod5 files",
+                    "help_text": ""
+                },
+                "color": {
+                    "type": "string",
+                    "format": "path",
+                    "description": "BAM or unaligned BAM (uBAM) files to use in the analysis.",
+                    "help_text": "This accepts one of three cases: (i) the path to a single BAM file; (ii) the path to a top-level directory containing BAM files; (iii) the path to a directory containing one level of sub-directories which in turn contain BAM files. In the first and second case, a sample name can be supplied with `--sample`. In the last case, the data is assumed to be multiplexed with the names of the sub-directories as barcodes. In this case, a sample sheet can be provided with `--sample_sheet`."
+                },
+                "basecalling_model": {
+                    "type": "string",
+                    "default": "path",
+                    "title": "Basecalling Model",
+                    "description": " ",
+                    "help_text": "If selected and if the input is a multiplex directory the workflow will also process the unclassified directory."
+                },
+                "threads": {
+                    "type": "integer",
+                    "default": "number",
+                    "description": "How many cores to use ?",
+                    "help_text": "Define the number of CPU cores to use"
+                },
+                "sample_type": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "RNA or DNA?",
+                    "help_text": "provide information whether DNA or RNA is used",
+                    "hidden": true
+                },
+                "out_dir": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to the output directory",
+                    "help_text": "Define an output directory on your system.",
+                    "hidden": true
+                }
+            },
+            "oneOf": [
+                {
+                    "required": [
+                        "sample_folder"
+                    ]
+                },
+                {
+                    "required": [
+                        "color"
+                    ]
+                },
+                {
+                    "required": [
+                        "basecalling_model"
+                    ]
+                },
+                {
+                    "required": [
+                        "threads"
+                    ]
+                },
+                {
+                    "required": [
+                        "sample_type"
+                    ]
+                },
+                {
+                    "required": [
+                        "color"
+                    ]
+                }
+            ]
+        },
+        "advanced_options": {
+            "title": "Advanced Options",
+            "type": "object",
+            "fa_icon": "far fa-question-circle",
+            "description": "Advanced options for configuring processes inside the workflow.",
+            "help_text": "These advanced options do not need to be changed for typical use, but allow fine tuning of workflows for users who want more control over the workflow.",
+            "properties": {}
+        },
+        "misc": {
+            "title": "Miscellaneous Options",
+            "type": "object",
+            "description": "Everything else.",
+            "default": "",
+            "properties": {
+                "disable_ping": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable to prevent sending a workflow ping."
+                },
+                "help": {
+                    "type": "boolean",
+                    "description": "Display help text.",
+                    "fa_icon": "fas fa-question-circle",
+                    "default": false,
+                    "hidden": true
+                },
+                "version": {
+                    "type": "boolean",
+                    "description": "Display version and exit.",
+                    "fa_icon": "fas fa-question-circle",
+                    "default": false,
+                    "hidden": true
+                }
+            }
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/input"
+        },
+        {
+            "$ref": "#/definitions/advanced_options"
+        },
+        {
+            "$ref": "#/definitions/misc"
+        }
+    ],
+    "properties": {
+        "aws_image_prefix": {
+            "type": "string",
+            "hidden": true
+        },
+        "aws_queue": {
+            "type": "string",
+            "hidden": true
+        },
+        "monochrome_logs": {
+            "type": "boolean"
+        },
+        "validate_params": {
+            "type": "boolean",
+            "default": true
+        },
+        "show_hidden_params": {
+            "type": "boolean"
+        }
+    },
+    "resources": {
+        "recommended": {
+            "cpus": 8,
+            "memory": "64GB"
+        },
+        "minimum": {
+            "cpus": 4,
+            "memory": "32GB"
+        },
+        "run_time": "5 minutes per sample",
+        "arm_support": true 
+    }
+}
