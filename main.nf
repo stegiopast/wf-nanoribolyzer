@@ -66,7 +66,7 @@ process dorado_basecalling{
     publishDir "${params.out_dir}", mode: 'copy'
     input:
     path(sample_folder)
-    path(basecalling_model), stageAs: "basecalling_model/*"
+    path(basecalling_model)
 
     output:
     val done
@@ -86,7 +86,7 @@ process dorado_basecalling{
         pod5 convert fast5 ${sample_folder}/*.fast5\
          --output converted_to_pod5/converted.pod5\
          --force-overwrite
-        dorado basecaller basecalling_model converted_to_pod5/\
+        dorado basecaller ${basecalling_model} converted_to_pod5/\
          > basecalling_output/basecalled.bam 
         dorado summary basecalling_output/basecalled.bam\
          > basecalling_output/sequencing_summary.txt
@@ -101,7 +101,7 @@ process dorado_basecalling{
     count_pod5=\$(ls ${sample_folder}/*.pod5 | wc -l)
     if [ \$count_pod5 != 0 ]
     then
-        dorado basecaller basecalling_model ${sample_folder}/*.pod5\
+        dorado basecaller ${basecalling_model} ${sample_folder}/*.pod5\
          > basecalling_output/basecalled.bam
         dorado summary basecalling_output/basecalled.bam\
          > basecalling_output/sequencing_summary.txt
@@ -250,12 +250,12 @@ process rebasecall_filtered_files{
     input:
         path(filtered_pod5)
         path(reference), stageAs: "reference.fasta"
-        path(basecalling_model), stageAs: "basecalling_model/*"
+        path(basecalling_model)
     output:
         path("filtered_pod5_basecalled.bam") , emit: rebasecalled_bam
         path("filtered_pod5_basecalled.bam.bai"), emit: rebasecalled_bam_bai
     """
-    dorado basecaller --estimate-poly-a --emit-moves basecalling_model ${filtered_pod5}\
+    dorado basecaller --estimate-poly-a --emit-moves ${basecalling_model} ${filtered_pod5}\
      | samtools fastq -T "*" --threads ${params.threads}\
      | minimap2 -y --MD -ax map-ont reference.fasta -\
      | samtools sort --threads ${params.threads}\
@@ -409,11 +409,11 @@ process template_driven_fragment_analysis{
 
 workflow{
     nextflow.enable.dsl=2
-    dorado_basecalling("${params.sample_folder}", file("${params.basecalling_model}"))
+    dorado_basecalling("${params.sample_folder}", "${params.basecalling_model}")
     trim_barcodes(dorado_basecalling.out.fastq_not_trimmed)
     align_to_45SN1(trim_barcodes.out.basecalled_fastq, file("${projectDir}/references/RNA45SN1.fasta"))
     filter_pod5_for_RNA45s_aligning_reads(align_to_45SN1.out.filtered_bam, align_to_45SN1.out.filtered_bai, "${params.sample_folder}", file("${dorado_basecalling.out.converted_pod5}"))
-    rebasecall_filtered_files(filter_pod5_for_RNA45s_aligning_reads.out.filtered_pod5, file("${projectDir}/references/RNA45SN1.fasta"), file("${params.basecalling_model}"))
+    rebasecall_filtered_files(filter_pod5_for_RNA45s_aligning_reads.out.filtered_pod5, file("${projectDir}/references/RNA45SN1.fasta"), "${params.basecalling_model}")
     extract_polyA_table(rebasecall_filtered_files.out.rebasecalled_bam, rebasecall_filtered_files.out.rebasecalled_bam_bai)
     fragment_analysis_hdbscan(rebasecall_filtered_files.out.rebasecalled_bam, rebasecall_filtered_files.out.rebasecalled_bam_bai,file("${projectDir}/references/RNA45SN1.fasta"))
     fragment_analysis_intensity(rebasecall_filtered_files.out.rebasecalled_bam, rebasecall_filtered_files.out.rebasecalled_bam_bai,file("${projectDir}/references/RNA45SN1.fasta"),fragment_analysis_hdbscan.out.done)
