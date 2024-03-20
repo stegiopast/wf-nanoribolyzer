@@ -2,7 +2,7 @@
 @Grab('com.xlson.groovycsv:groovycsv:1.1')
 import static com.xlson.groovycsv.CsvParser.parseCsv
 import java.io.File;
-
+nextflow.enable.dsl=2
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                                                         // 
@@ -15,38 +15,34 @@ import java.io.File;
 //                                                                                                                                                         //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// println "Seqfolder"
-// println params.sample_folder
-// println ""
+println "Seqfolder"
+println params.sample_folder
+println ""
 
-// println "Color"
-// println params.color
-// println ""
+println "Color"
+println params.color
+println ""
 
-// println "Script folder"
-// println params.script_folder
-// println ""
+println "Script folder"
+println params.script_folder
+println ""
 
-// println "Output folder"
-// println params.output_folder
-// println ""
+println "Output folder"
+println params.output_folder
+println ""
 
-// println "Basecalling model"
-// println params.basecalling_model
-// println ""
+println "Basecalling model"
+println params.basecalling_model
+println ""
 
-// println "Threads"
-// println params.threads
-// println ""
+println "Threads"
+println params.threads
+println ""
 
-// println "Sample type"
-// println params.sample_type
-// println ""
+println "Sample type"
+println params.sample_type
+println ""
 
-
-// class intObj{
-//     public int value;
-// }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                                                         // 
@@ -80,8 +76,8 @@ process dorado_basecalling{
     """ 
     mkdir -p basecalling_output
     mkdir -p converted_to_pod5
-    count_fast5=\$(ls ${sample_folder}/*.fast5 | wc -l)
-    if [ \$count_fast5 != 0 ]
+    (ls ${sample_folder}/*.pod5 && export filetype=pod5) || export filetype=fast5 
+    if [ \$filetype == fast5 ]
     then 
         pod5 convert fast5 ${sample_folder}/*.fast5\
          --output converted_to_pod5/converted.pod5\
@@ -98,8 +94,7 @@ process dorado_basecalling{
          -1\
           > basecalling_output/basecalled_not_trimmed.fastq.gz
     fi
-    count_pod5=\$(ls ${sample_folder}/*.pod5 | wc -l)
-    if [ \$count_pod5 != 0 ]
+    if [ \$filetype == pod5 ]
     then
         dorado basecaller ${basecalling_model} ${sample_folder}/*.pod5\
          > basecalling_output/basecalled.bam
@@ -148,7 +143,7 @@ process trim_barcodes{
 
 process align_to_45SN1{
     label 'other_tools'
-    publishDir "${params.out_dir}/basecalling_output/"
+    publishDir "${params.out_dir}/basecalling_output/", mode:"copy"
     input:
         path(basecalled_fastq) 
         path(reference), stageAs:"reference.fasta"
@@ -166,14 +161,10 @@ process align_to_45SN1{
      | samtools sort\
      > filtered.bam
     #################
-    samtools bam2fq filtered.bam
-     --threads ${params.threads}
-     > filtered.fastq
+    samtools bam2fq filtered.bam --threads ${params.threads} > filtered.fastq
     ##################
-    samtools index filtered.bam\
-     -@ ${params.threads}
-    gzip filtered.fastq\
-     -c > filtered.fastq.gz
+    samtools index filtered.bam -@ ${params.threads}
+    gzip filtered.fastq -c > filtered.fastq.gz
     """
 }
 
@@ -193,20 +184,21 @@ process align_to_45SN1{
 
 process filter_pod5_for_RNA45s_aligning_reads{
     label 'other_tools'
-    publishDir "${params.out_dir}/filtered_pod5/"
+    publishDir "${params.out_dir}/filtered_pod5/", mode:"copy"
     input:
         path(filtered_bam)
         path(filtered_bai)
         path(sample_folder)
         path(converted_pod5), stageAs: "converted.pod5"
     output:
-        val done
+        val 1,emit: done
         path("filtered.pod5"), emit: filtered_pod5
         path("sorted_filtered_reads.txt"), emit: sorted_filtered_read_ids
     """
     mkdir -p filtered_pod5
-    count_fast5=\$(ls ${sample_folder}/*.fast5 | wc -l)
-    if [ \$count_fast5 == 0 ]
+    (ls ${sample_folder}/*.pod5 && export filetype=pod5) || export filetype=fast5 
+    echo \$filetype
+    if [ \$filetype == pod5 ]
     then
         python ${projectDir}/bin/filter_pod5.py\
          -i ${filtered_bam}\
@@ -217,11 +209,13 @@ process filter_pod5_for_RNA45s_aligning_reads{
          --missing-ok\
          --force-overwrite\
          --threads ${params.threads}
-    else
-        python ${projectDir}/bin/python_scripts/filter_pod5.py\
+    fi
+    if [ \$filetype == fast5 ]
+    then
+        python ${projectDir}/bin/filter_pod5.py\
          -i ${filtered_bam}\
          -o .
-        pod5 filter converted.pod5
+        pod5 filter converted.pod5\
          --ids sorted_filtered_reads.txt\
          --output filtered.pod5\
          --missing-ok\
@@ -246,7 +240,7 @@ process filter_pod5_for_RNA45s_aligning_reads{
 
 process rebasecall_filtered_files{
     label 'dorado_basecaller'
-    publishDir "${params.out_dir}/filtered_pod5/"
+    publishDir "${params.out_dir}/filtered_pod5/", mode:"copy"
     input:
         path(filtered_pod5)
         path(reference), stageAs: "reference.fasta"
@@ -280,17 +274,15 @@ process rebasecall_filtered_files{
 
 process extract_polyA_table{
     label 'other_tools'
-    publishDir "${params.out_dir}/taillength_estimation/"
+    publishDir "${params.out_dir}/taillength_estimation/", mode:"copy"
     input:
         path(rebasecalled_bam)
         path(rebasecalled_bam_bai)
     output:
-        val done
+        val 1,emit: done
         path("tail_estimation.csv")
     """
-    python ${projectDir}/bin/python_scripts/extract_polyA_tails.py\
-     -i filtered_pod5_basecalled.bam\
-     -o .
+    python ${projectDir}/bin/extract_polyA_tails.py -i filtered_pod5_basecalled.bam -o .
     """
 }
 
@@ -312,7 +304,7 @@ process extract_polyA_table{
 
 process fragment_analysis_hdbscan{
     label 'other_tools'
-    publishDir "${params.out_dir}/fragment_analysis_hdbscan/"
+    publishDir "${params.out_dir}/fragment_analysis_hdbscan/", mode:"copy"
     input:
         path(filtered_bam)
         path(filtered_bam_bai)
@@ -322,14 +314,7 @@ process fragment_analysis_hdbscan{
         val 1, emit: done
     
     """
-    python ${projectDir}/bin/fragment_analysis_hdbscan.py\
-     -c ${params.threads}\
-     -i ${filtered_bam}
-     -r reference.fasta\
-     -o ./\
-     -t 0.9\
-     -m 5\
-     -s ${params.color}
+    python ${projectDir}/bin/fragment_analysis_hdbscan.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -m 5 -s ${params.color}
     """
 }
 
@@ -350,7 +335,7 @@ process fragment_analysis_hdbscan{
 
 process fragment_analysis_intensity{
     label 'other_tools'
-    publishDir "${params.out_dir}/fragment_analysis_intensity/"
+    publishDir "${params.out_dir}/fragment_analysis_intensity/", mode:"copy"
     input:
         path(filtered_bam)
         path(filtered_bam_bai)
@@ -360,13 +345,7 @@ process fragment_analysis_intensity{
         path("*")
         val 1, emit: done
     """
-    python ${projectDir}/bin/fragment_analysis_intensity.py\
-     -c ${params.threads}\
-     -i ${filtered_bam}
-     -r reference.fasta\
-     -o ./\
-     -t 0.9\
-     -s ${params.color}
+    python ${projectDir}/bin/fragment_analysis_intensity.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -s ${params.color}
     """
 }
 
@@ -386,7 +365,7 @@ process fragment_analysis_intensity{
 
 process template_driven_fragment_analysis{
     label 'other_tools'
-    publishDir "${params.out_dir}/template_based_analysis/"
+    publishDir "${params.out_dir}/template_based_analysis/", mode:"copy"
     input:
         path(filtered_bam)
         path(filtered_bam_bai)
@@ -396,27 +375,19 @@ process template_driven_fragment_analysis{
     output:
         path("*")
     """
-    python ${projectDir}/bin/template_driven_fragment_anaylsis.py\
-     -c ${params.threads}\
-     -i ${filtered_bam}\
-     -r reference.fasta\
-     -f template.csv\
-     -o ./\
-     -t 0.9\
-     -s ${params.color}
+    python ${projectDir}/bin/template_driven_fragment_analysis.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -f template.csv -o ./ -t 0.9 -s ${params.color}
     """
 }
 
 workflow{
-    nextflow.enable.dsl=2
     dorado_basecalling("${params.sample_folder}", "${params.basecalling_model}")
     trim_barcodes(dorado_basecalling.out.fastq_not_trimmed)
     align_to_45SN1(trim_barcodes.out.basecalled_fastq, file("${projectDir}/references/RNA45SN1.fasta"))
-    filter_pod5_for_RNA45s_aligning_reads(align_to_45SN1.out.filtered_bam, align_to_45SN1.out.filtered_bai, "${params.sample_folder}", file("${dorado_basecalling.out.converted_pod5}"))
+    filter_pod5_for_RNA45s_aligning_reads(align_to_45SN1.out.filtered_bam, align_to_45SN1.out.filtered_bai, "${params.sample_folder}", dorado_basecalling.out.converted_pod5)
     rebasecall_filtered_files(filter_pod5_for_RNA45s_aligning_reads.out.filtered_pod5, file("${projectDir}/references/RNA45SN1.fasta"), "${params.basecalling_model}")
     extract_polyA_table(rebasecall_filtered_files.out.rebasecalled_bam, rebasecall_filtered_files.out.rebasecalled_bam_bai)
     fragment_analysis_hdbscan(rebasecall_filtered_files.out.rebasecalled_bam, rebasecall_filtered_files.out.rebasecalled_bam_bai,file("${projectDir}/references/RNA45SN1.fasta"))
     fragment_analysis_intensity(rebasecall_filtered_files.out.rebasecalled_bam, rebasecall_filtered_files.out.rebasecalled_bam_bai,file("${projectDir}/references/RNA45SN1.fasta"),fragment_analysis_hdbscan.out.done)
-    template_driven_fragment_analysis(rebasecall_filtered_files.out.rebasecalled_bam, rebasecall_filtered_files.out.rebasecalled_bam_bai,file("${projectDir}/references/RNA45SN1.fasta"), file("${params.script_folder}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv"),fragment_analysis_intensity.out.done)
+    template_driven_fragment_analysis(rebasecall_filtered_files.out.rebasecalled_bam, rebasecall_filtered_files.out.rebasecalled_bam_bai,file("${projectDir}/references/RNA45SN1.fasta"), file("${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv"),fragment_analysis_intensity.out.done)
 }
 
