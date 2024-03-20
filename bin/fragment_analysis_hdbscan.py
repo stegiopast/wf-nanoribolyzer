@@ -147,23 +147,13 @@ def hdbscan_clustering(fusion_alignment_df,dbscan_matrix,id_dict,min_number_of_n
     for cluster_number in tqdm(cluster_dict.keys(),total=len(cluster_dict.keys())):
         cluster_list = list(cluster_dict[cluster_number])
         list_read_groups.append(cluster_list)
-    #list_read_groups = []
-    #for cluster_number in tqdm(cluster_dict.keys(),total=len(cluster_dict.keys())):
-        #cluster_list = list(cluster_dict[cluster_number])
-        #read_group_df = fusion_alignment_df.filter(pl.col("ID").is_in(cluster_list))
-        #read_group_df = read_group_df.rows(named=True)
-        #list_read_groups.append(f"{output}cluster_{cluster_number}.json")
-        #with open(f"{output}cluster_{cluster_number}.json","w") as json_file:
-        #    json.dump(read_group_df, json_file)
     single_reads_df = fusion_alignment_df.filter(pl.col("ID").is_in(single_read_ids))
     return list_read_groups, single_reads_df
 
 
 def fusion_read_groups(temp_df,_reference_dict):
     reference_length = int(_reference_dict["Length"])
-    #temp_df = pl.read_json(_read_group_path)
     if not temp_df.is_empty():
-        #temp_df = pd.DataFrame.from_dict(temp_df)
         min_refstart = min(temp_df["Refstart"])
         max_refend = max(temp_df["Refend"])
         final_consensus_ids = [id for id in temp_df["ID"]]
