@@ -35,7 +35,7 @@ opt_parser = argparse.ArgumentParser()
 opt_parser.add_argument("-i", "--input_file", dest="bamfile_name", help="Insert a sample bam file", metavar="FILE")
 opt_parser.add_argument("-r", "--reference_file",dest="fasta_name", help="Insert a reference fasta file", metavar="FILE")
 opt_parser.add_argument("-o", "--output_path",dest="output", help="Insert an output directory to write to", metavar="FILE")
-opt_parser.add_argument("-m","--min_neighbours", dest= "min_neighbors", help="Define a minimal number of neighbors for HDBSCAN",metavar="FILE")
+opt_parser.add_argument("-m","--min_neighbors", dest= "min_neighbors", help="Define a minimal number of neighbors for HDBSCAN",metavar="FILE")
 opt_parser.add_argument("-t","--identity_threshold", dest= "identity", help="Define a minimal matching percentage between reads and reference",metavar="FILE")
 opt_parser.add_argument("-c","--cores", dest= "cores", help="Insert number of cores",metavar="FILE")
 opt_parser.add_argument("-s", "--sample_type",dest="sample_type", help="Mention which type of sample you have", metavar="FILE")
@@ -129,6 +129,7 @@ def hdbscan_clustering(fusion_alignment_df,dbscan_matrix,id_dict,min_number_of_n
     cluster_dict = {}
     additional_label = max(result.labels_) + 1
     single_read_ids = []
+    list_read_groups = []
     for Start,End,Label in zip(dbscan_dataframe.Start,dbscan_dataframe.End,dbscan_dataframe.Labels):
         #This is necessary since unclustered reads can still be composed of many reads in the intensity matrix
         if len(id_dict[f"{Start}:{End}"]) <= 1:
@@ -143,21 +144,24 @@ def hdbscan_clustering(fusion_alignment_df,dbscan_matrix,id_dict,min_number_of_n
             cluster_dict[Label] = []
         for id in id_dict[f"{Start}:{End}"]:
             cluster_dict[Label].append(id)
-    list_read_groups = []
     for cluster_number in tqdm(cluster_dict.keys(),total=len(cluster_dict.keys())):
         cluster_list = list(cluster_dict[cluster_number])
-        read_group_df = fusion_alignment_df.filter(pl.col("ID").is_in(cluster_list))
-        read_group_df = read_group_df.rows(named=True)
-        list_read_groups.append(f"{output}cluster_{cluster_number}.json")
-        with open(f"{output}cluster_{cluster_number}.json","w") as json_file:
-            json.dump(read_group_df, json_file)
+        list_read_groups.append(cluster_list)
+    #list_read_groups = []
+    #for cluster_number in tqdm(cluster_dict.keys(),total=len(cluster_dict.keys())):
+        #cluster_list = list(cluster_dict[cluster_number])
+        #read_group_df = fusion_alignment_df.filter(pl.col("ID").is_in(cluster_list))
+        #read_group_df = read_group_df.rows(named=True)
+        #list_read_groups.append(f"{output}cluster_{cluster_number}.json")
+        #with open(f"{output}cluster_{cluster_number}.json","w") as json_file:
+        #    json.dump(read_group_df, json_file)
     single_reads_df = fusion_alignment_df.filter(pl.col("ID").is_in(single_read_ids))
     return list_read_groups, single_reads_df
 
 
-def fusion_read_groups(_read_group_path,_reference_dict):
+def fusion_read_groups(temp_df,_reference_dict):
     reference_length = int(_reference_dict["Length"])
-    temp_df = pl.read_json(_read_group_path)
+    #temp_df = pl.read_json(_read_group_path)
     if not temp_df.is_empty():
         #temp_df = pd.DataFrame.from_dict(temp_df)
         min_refstart = min(temp_df["Refstart"])
@@ -328,11 +332,9 @@ def hdbscan_fusion(fusion_alignment_df = pl.DataFrame(), min_number_of_neighbour
         list_read_groups,single_reads_df = hdbscan_clustering(fusion_alignment_df,dbscan_matrix,id_dict,min_number_of_neighbours)
         consensus_rows = []
         logger.info("Find consensus of defined clusters")
-        for path in tqdm(list_read_groups):
-            out_dict = fusion_read_groups(path,reference_dict)
+        for id_list in tqdm(list_read_groups):
+            out_dict = fusion_read_groups(fusion_alignment_df.filter(pl.col("ID").is_in(id_list)),reference_dict)
             consensus_rows.append(out_dict)
-        for path in list_read_groups:
-            os.remove(path)
         consensus_df = pd.DataFrame.from_dict(consensus_rows)
         consensus_df = consensus_df.sort_values(by=["Refstart","Length"], ascending=[True,False]).reset_index(drop = True)
         

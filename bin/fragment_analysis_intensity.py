@@ -124,33 +124,24 @@ def create_intensity_matrix(fusion_alignment_df):
 
 def intensity_clustering(fusion_alignment_df,dbscan_matrix,id_dict):
     dbscan_dataframe = pd.DataFrame(dbscan_matrix,columns=["Start","End","Counts"])
-    cluster_dict = {}
     single_read_ids = []
-    for Start,End,Count in zip(dbscan_dataframe.Start,dbscan_dataframe.End,dbscan_dataframe.Counts):
+    list_read_groups = []
+    for Start,End,Count in tqdm(zip(dbscan_dataframe.Start,dbscan_dataframe.End,dbscan_dataframe.Counts),total = len(dbscan_dataframe.Start)):
         #This is necessary since unclustered reads can still be composed of many reads in the intensity matrix
-        Label=f"{Start}:{End}:{Count}"
         if Count <= 1:
             single_read_ids.append(id_dict[f"{Start}:{End}"][0])
             continue
-        if Label not in cluster_dict.keys():
-            cluster_dict[Label] = []
-        for id in id_dict[f"{Start}:{End}"]:
-            cluster_dict[Label].append(id)
-    list_read_groups = []
-    for cluster_number in tqdm(cluster_dict.keys(),total=len(cluster_dict.keys())):
-        cluster_list = list(cluster_dict[cluster_number])
-        read_group_df = fusion_alignment_df.filter(pl.col("ID").is_in(cluster_list))
-        read_group_df = read_group_df.rows(named=True)
-        list_read_groups.append(f"{output}cluster_{cluster_number}.json")
-        with open(f"{output}cluster_{cluster_number}.json","w") as json_file:
-            json.dump(read_group_df, json_file)
+        else:
+            read_group_df = fusion_alignment_df.filter((pl.col("Refstart") == Start) & (pl.col("Refend") == End))["ID"]
+            read_group_list = list(read_group_df)
+            list_read_groups.append(read_group_list)
     single_reads_df = fusion_alignment_df.filter(pl.col("ID").is_in(single_read_ids))
     return list_read_groups, single_reads_df
 
 
-def fusion_read_groups(_read_group_path,_reference_dict):
+def fusion_read_groups(temp_df,_reference_dict):
     reference_length = int(_reference_dict["Length"])
-    temp_df = pl.read_json(_read_group_path)
+    #temp_df = pl.read_json(_read_group_path)
     if not temp_df.is_empty():
         min_refstart = min(temp_df["Refstart"])
         max_refend = max(temp_df["Refend"])
@@ -325,16 +316,9 @@ def intensity_fusion(fusion_alignment_df = pd.DataFrame()):
         list_read_groups,single_reads_df = intensity_clustering(fusion_alignment_df,dbscan_matrix,id_dict)
         consensus_rows = []
         logger.info("Find consensus of defined clusters")
-        # with get_context("spawn").Pool(4) as p:
-        #     pool_output = p.starmap(fusion_read_groups, zip([path for path in list_read_groups],repeat(reference_dict)))
-        # for objects in pool_output:
-        #     out_dict = objects
-        #     consensus_rows.append(out_dict)
-        for path in tqdm(list_read_groups):
-            out_dict = fusion_read_groups(path,reference_dict)
+        for id_list in tqdm(list_read_groups):
+            out_dict = fusion_read_groups(fusion_alignment_df.filter(pl.col("ID").is_in(id_list)),reference_dict)
             consensus_rows.append(out_dict)
-        for path in list_read_groups:
-            os.remove(path)
         consensus_df = pd.DataFrame.from_dict(consensus_rows)
         consensus_df = consensus_df.sort_values(by=["Refstart","Length"], ascending=[True,False]).reset_index(drop = True)
         

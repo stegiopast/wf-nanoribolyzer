@@ -28,7 +28,7 @@ println params.script_folder
 println ""
 
 println "Output folder"
-println params.output_folder
+println params.out_dir
 println ""
 
 println "Basecalling model"
@@ -76,7 +76,7 @@ process dorado_basecalling{
     """ 
     mkdir -p basecalling_output
     mkdir -p converted_to_pod5
-    (ls ${sample_folder}/*.pod5 && export filetype=pod5) || export filetype=fast5 
+    (ls ${sample_folder}/*.pod5) && export filetype=pod5 || export filetype=fast5 
     if [ \$filetype == fast5 ]
     then 
         pod5 convert fast5 ${sample_folder}/*.fast5\
@@ -96,7 +96,7 @@ process dorado_basecalling{
     fi
     if [ \$filetype == pod5 ]
     then
-        dorado basecaller ${basecalling_model} ${sample_folder}/*.pod5\
+        dorado basecaller ${basecalling_model} ${sample_folder}\
          > basecalling_output/basecalled.bam
         dorado summary basecalling_output/basecalled.bam\
          > basecalling_output/sequencing_summary.txt
@@ -196,7 +196,7 @@ process filter_pod5_for_RNA45s_aligning_reads{
         path("sorted_filtered_reads.txt"), emit: sorted_filtered_read_ids
     """
     mkdir -p filtered_pod5
-    (ls ${sample_folder}/*.pod5 && export filetype=pod5) || export filetype=fast5 
+    (ls ${sample_folder}/*.pod5) && export filetype=pod5 || export filetype=fast5 
     echo \$filetype
     if [ \$filetype == pod5 ]
     then
