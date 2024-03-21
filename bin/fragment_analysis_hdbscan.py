@@ -130,7 +130,7 @@ def hdbscan_clustering(fusion_alignment_df,dbscan_matrix,id_dict,min_number_of_n
     additional_label = max(result.labels_) + 1
     single_read_ids = []
     list_read_groups = []
-    for Start,End,Label in zip(dbscan_dataframe.Start,dbscan_dataframe.End,dbscan_dataframe.Labels):
+    for Start,End,Label in tqdm(zip(dbscan_dataframe.Start,dbscan_dataframe.End,dbscan_dataframe.Labels),total=len(dbscan_dataframe.Start)):
         #This is necessary since unclustered reads can still be composed of many reads in the intensity matrix
         if len(id_dict[f"{Start}:{End}"]) <= 1:
             if Label == -1 or Label == "-1":
@@ -147,7 +147,7 @@ def hdbscan_clustering(fusion_alignment_df,dbscan_matrix,id_dict,min_number_of_n
     for cluster_number in tqdm(cluster_dict.keys(),total=len(cluster_dict.keys())):
         cluster_list = list(cluster_dict[cluster_number])
         list_read_groups.append(cluster_list)
-    single_reads_df = fusion_alignment_df.filter(pl.col("ID").is_in(single_read_ids))
+    single_reads_df = fusion_alignment_df.lazy().filter(pl.col("ID").is_in(single_read_ids)).collect()
     return list_read_groups, single_reads_df
 
 
@@ -323,7 +323,7 @@ def hdbscan_fusion(fusion_alignment_df = pl.DataFrame(), min_number_of_neighbour
         consensus_rows = []
         logger.info("Find consensus of defined clusters")
         for id_list in tqdm(list_read_groups):
-            out_dict = fusion_read_groups(fusion_alignment_df.filter(pl.col("ID").is_in(id_list)),reference_dict)
+            out_dict = fusion_read_groups(fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),reference_dict)
             consensus_rows.append(out_dict)
         consensus_df = pd.DataFrame.from_dict(consensus_rows)
         consensus_df = consensus_df.sort_values(by=["Refstart","Length"], ascending=[True,False]).reset_index(drop = True)

@@ -132,7 +132,7 @@ def intensity_clustering(fusion_alignment_df,dbscan_matrix,id_dict):
             single_read_ids.append(id_dict[f"{Start}:{End}"][0])
             continue
         else:
-            read_group_df = fusion_alignment_df.filter((pl.col("Refstart") == Start) & (pl.col("Refend") == End))["ID"]
+            read_group_df = fusion_alignment_df.lazy().filter(pl.col("Refstart") == Start).filter(pl.col("Refend") == End).collect()["ID"]
             read_group_list = list(read_group_df)
             list_read_groups.append(read_group_list)
     single_reads_df = fusion_alignment_df.filter(pl.col("ID").is_in(single_read_ids))
@@ -317,7 +317,7 @@ def intensity_fusion(fusion_alignment_df = pd.DataFrame()):
         consensus_rows = []
         logger.info("Find consensus of defined clusters")
         for id_list in tqdm(list_read_groups):
-            out_dict = fusion_read_groups(fusion_alignment_df.filter(pl.col("ID").is_in(id_list)),reference_dict)
+            out_dict = fusion_read_groups(fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),reference_dict)
             consensus_rows.append(out_dict)
         consensus_df = pd.DataFrame.from_dict(consensus_rows)
         consensus_df = consensus_df.sort_values(by=["Refstart","Length"], ascending=[True,False]).reset_index(drop = True)
