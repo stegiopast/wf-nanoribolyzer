@@ -35,7 +35,7 @@
                 },
                 "threads": {
                     "type": "integer",
-                    "default": "number",
+                    "default": "integer",
                     "description": "How many cores to use ?",
                     "help_text": "Define the number of CPU cores to use"
                 },
