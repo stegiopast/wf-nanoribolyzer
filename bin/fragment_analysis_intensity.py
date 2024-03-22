@@ -6,6 +6,7 @@ import pysam
 import pandas as pd
 import numpy as np
 import operator
+from multiprocessing import Manager
 from multiprocessing import get_context
 from multiprocessing import Pool
 from itertools import repeat
@@ -139,10 +140,11 @@ def intensity_clustering(fusion_alignment_df,dbscan_matrix,id_dict):
     return list_read_groups, single_reads_df
 
 
-def fusion_read_groups(temp_df,_reference_dict):
+def fusion_read_groups(mgr_df,id_list,_reference_dict):
+    temp_df = mgr_df[mgr_df["ID"].isin(id_list)]
     reference_length = int(_reference_dict["Length"])
     #temp_df = pl.read_json(_read_group_path)
-    if not temp_df.is_empty():
+    if temp_df.shape[0] > 0:
         min_refstart = min(temp_df["Refstart"])
         max_refend = max(temp_df["Refend"])
         final_consensus_ids = [id for id in temp_df["ID"]]
@@ -316,9 +318,17 @@ def intensity_fusion(fusion_alignment_df = pd.DataFrame()):
         list_read_groups,single_reads_df = intensity_clustering(fusion_alignment_df,dbscan_matrix,id_dict)
         consensus_rows = []
         logger.info("Find consensus of defined clusters")
-        for id_list in tqdm(list_read_groups):
-            out_dict = fusion_read_groups(fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),reference_dict)
+        with Pool(10) as p:
+            pool_output = p.starmap(fusion_read_groups, zip(repeat(fusion_alignment_df.to_pandas(use_pyarrow_extension_array=True)),list_read_groups,repeat(reference_dict)))
+        for objects in pool_output:
+            out_dict = objects
             consensus_rows.append(out_dict)
+        p.close()
+
+            
+        #for id_list in tqdm(list_read_groups):
+        #    out_dict = fusion_read_groups(fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),reference_dict)
+        #    consensus_rows.append(out_dict)
         consensus_df = pd.DataFrame.from_dict(consensus_rows)
         consensus_df = consensus_df.sort_values(by=["Refstart","Length"], ascending=[True,False]).reset_index(drop = True)
         
