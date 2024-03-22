@@ -140,8 +140,8 @@ def intensity_clustering(fusion_alignment_df,dbscan_matrix,id_dict):
     return list_read_groups, single_reads_df
 
 
-def fusion_read_groups(mgr_df,id_list,_reference_dict):
-    temp_df = mgr_df[mgr_df["ID"].isin(id_list)]
+def fusion_read_groups(temp_df,id_list,_reference_dict):
+    temp_df = temp_df[temp_df["ID"].isin(id_list)]
     reference_length = int(_reference_dict["Length"])
     #temp_df = pl.read_json(_read_group_path)
     if temp_df.shape[0] > 0:
