@@ -132,8 +132,8 @@ def intensity_clustering(fusion_alignment_df,dbscan_matrix,id_dict):
             single_read_ids.append(id_dict[f"{Start}:{End}"][0])
             continue
         else:
-            read_group_df = fusion_alignment_df.lazy().filter(pl.col("Refstart") == Start).filter(pl.col("Refend") == End).collect()["ID"]
-            read_group_list = list(read_group_df)
+            #read_group_df = fusion_alignment_df.lazy().filter(pl.col("Refstart") == Start).filter(pl.col("Refend") == End).collect()["ID"]
+            read_group_list = id_dict[f"{Start}:{End}"]
             list_read_groups.append(read_group_list)
     single_reads_df = fusion_alignment_df.filter(pl.col("ID").is_in(single_read_ids))
     return list_read_groups, single_reads_df
