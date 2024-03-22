@@ -151,25 +151,26 @@ def hdbscan_clustering(fusion_alignment_df,dbscan_matrix,id_dict,min_number_of_n
     return list_read_groups, single_reads_df
 
 
-def fusion_read_groups(temp_df,id_list,_reference_dict):
-    temp_df = temp_df[temp_df["ID"].isin(id_list)]
+def fusion_read_groups(temp_df,_reference_dict):
     reference_length = int(_reference_dict["Length"])
     #temp_df = pl.read_json(_read_group_path)
-    if temp_df.shape[0] > 0:
+    if not temp_df.is_empty():
         min_refstart = min(temp_df["Refstart"])
         max_refend = max(temp_df["Refend"])
         final_consensus_ids = [id for id in temp_df["ID"]]
         number_of_reads = sum(temp_df["n_Reads"])
-        position_array = [{"A": 0, "T": 0,"C": 0,"G": 0,"U": 0,"-": 0} for location in range(reference_length)]
+        position_array = [{"A": 0, "T": 0,"C": 0,"G": 0,"U": 0,"-": 0} for location in range(min_refstart,max_refend + 1)]
         for row_seq,rowstart,rowend,row_n_reads in zip(temp_df["Sequence"],temp_df["Refstart"],temp_df["Refend"],temp_df["n_Reads"]):
-            for j in range(reference_length):
+            for j in range(min_refstart,max_refend + 1):
+                index_seq = j-rowstart
+                index_position_array = j-min_refstart
                 if  j >= rowstart and j < rowend:
-                    nucleotide = row_seq[j-rowstart]
-                    position_array[j][nucleotide] = position_array[j][nucleotide] + row_n_reads  
+                    nucleotide = row_seq[index_seq]
+                    position_array[index_position_array][nucleotide] = position_array[index_position_array][nucleotide] + row_n_reads  
                 else:
-                    position_array[j]["-"] = position_array[j]["-"] + row_n_reads
+                    position_array[index_position_array]["-"] = position_array[index_position_array]["-"] + row_n_reads
         string = ""
-        for k in position_array[min_refstart:max_refend]:
+        for k in position_array:
             string += max(k.items(), key=operator.itemgetter(1))[0]
         temp_string = "-" * min_refstart + string + "-" * (reference_length - max_refend)
         absolute_base_count_array = []
@@ -192,7 +193,7 @@ def fusion_read_groups(temp_df,id_list,_reference_dict):
                     max_refend = j
         min_max_length = max_refend - min_refstart
         string = temp_string[min_refstart:max_refend]
-        output_dict = {"ID" : f"{min_refstart}:{max_refend}:{number_of_reads}", "Sequence" : string, "Proportion_Sequence": absolute_base_count_array[min_refstart:max_refend], "Length": min_max_length, "Refstart": min_refstart, "Refend": max_refend,"n_Reads": number_of_reads,"IDS": final_consensus_ids}
+        output_dict = {"ID" : f"{min_refstart}:{max_refend}:{number_of_reads}", "Sequence" : string, "Proportion_Sequence": absolute_base_count_array, "Length": min_max_length, "Refstart": min_refstart, "Refend": max_refend,"n_Reads": number_of_reads,"IDS": final_consensus_ids}
         return output_dict
 
 
@@ -324,12 +325,9 @@ def hdbscan_fusion(fusion_alignment_df = pl.DataFrame(), min_number_of_neighbour
         list_read_groups,single_reads_df = hdbscan_clustering(fusion_alignment_df,dbscan_matrix,id_dict,min_number_of_neighbours)
         consensus_rows = []
         logger.info("Find consensus of defined clusters")
-        with Pool(10) as p:
-            pool_output = p.starmap(fusion_read_groups, zip(repeat(fusion_alignment_df.to_pandas(use_pyarrow_extension_array=True)),list_read_groups,repeat(reference_dict)))
-        for objects in pool_output:
-            out_dict = objects
+        for id_list in tqdm(list_read_groups):
+            out_dict = fusion_read_groups(fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),reference_dict)
             consensus_rows.append(out_dict)
-        p.close()
         consensus_df = pd.DataFrame.from_dict(consensus_rows)
         consensus_df = consensus_df.sort_values(by=["Refstart","Length"], ascending=[True,False]).reset_index(drop = True)
         
