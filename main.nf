@@ -249,13 +249,24 @@ process rebasecall_filtered_files{
         path("filtered_pod5_basecalled.bam") , emit: rebasecalled_bam
         path("filtered_pod5_basecalled.bam.bai"), emit: rebasecalled_bam_bai
     """
-    dorado basecaller --estimate-poly-a --emit-moves ${basecalling_model} ${filtered_pod5}\
-     | samtools fastq -T "*" --threads ${params.threads}\
-     | minimap2 -y --MD -ax map-ont reference.fasta -\
-     | samtools sort --threads ${params.threads}\
-     | samtools view -b -F 3884 --threads ${params.threads}\
-     > filtered_pod5_basecalled.bam 
-    samtools index filtered_pod5_basecalled.bam -@ ${params.threads}
+    if [ ${sample_type} == "DNA" ]
+    then
+        dorado basecaller --estimate-poly-a --emit-moves ${basecalling_model} ${filtered_pod5}\
+        | samtools fastq -T "*" --threads ${params.threads}\
+        | minimap2 -t ${params.threads} -y --MD -ax map-ont reference.fasta -\
+        | samtools sort --threads ${params.threads}\
+        | samtools view -b -F 3884 --threads ${params.threads}\
+        > filtered_pod5_basecalled.bam 
+        samtools index filtered_pod5_basecalled.bam -@ ${params.threads}
+    else
+        dorado basecaller --estimate-poly-a --emit-moves sup,m6A,pseU ${filtered_pod5}\
+        | samtools fastq -T "*" --threads ${params.threads}\
+        | minimap2 -t ${params.threads} -y --MD -ax map-ont reference.fasta -\
+        | samtools sort --threads ${params.threads}\
+        | samtools view -b -F 3884 --threads ${params.threads}\
+        > filtered_pod5_basecalled.bam 
+        samtools index filtered_pod5_basecalled.bam -@ ${params.threads}
+    fi
     """
 }
 

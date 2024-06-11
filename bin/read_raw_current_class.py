@@ -29,8 +29,6 @@ Move table and MD tags must be integrated in the final bam file
 """
 Creates an object of a single read in a pod5 dataset, providing direct access to resquiggleing data performed with ONT's remora tool. 
 """
-
-
 class RawCurrentReadDataset:
     def __init__(
         self,
