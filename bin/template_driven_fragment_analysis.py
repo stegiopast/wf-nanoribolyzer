@@ -105,12 +105,40 @@ logger.setLevel("INFO")
 #                                                                                                                                   #
 #####################################################################################################################################
 
-"""
-An alignment between Reference and read sequences is reconstructed in a pandas dataframe using the syntax documented in pysam.
-"""
-
-
 def reconstruct_alignment(samfile: pysam.AlignmentFile):
+    """
+    Reconstructs alignment of sequences from a SAM/BAM file and creates a DataFrame with alignment information.
+
+    Parameters:
+    -----------
+    samfile : pysam.AlignmentFile
+        A pysam.AlignmentFile object representing the SAM/BAM file to be processed.
+
+    Returns:
+    --------
+    tuple
+        A tuple containing:
+        - alignment_df: A polars DataFrame with the reconstructed alignment information. Columns include:
+            - "ID" : The read/query name.
+            - "Sequence" : The reconstructed aligned sequence.
+            - "Proportion_Sequence" : An empty list (placeholder for future calculations).
+            - "Length" : The length of the aligned sequence on the reference.
+            - "Refstart" : The reference start position.
+            - "Refend" : The reference end position.
+            - "n_Reads" : The number of reads (always 1 for each entry).
+            - "IDS" : A list containing the read/query name.
+        - counter_forward: int, the number of forward reads processed.
+        - counter_reverse: int, the number of reverse reads processed.
+
+    The function processes each read in the SAM/BAM file, reconstructing the aligned sequence using the CIGAR string 
+    and read sequence information. It tracks the number of forward and reverse reads and compiles the results 
+    into a polars DataFrame.
+    
+    Example:
+    --------
+    >>> samfile = pysam.AlignmentFile("example.bam", "rb")
+    >>> alignment_df, forward_count, reverse_count = reconstruct_alignment(samfile)
+    """
     counter_forward = 0
     counter_reverse = 0
     temp_list = []
@@ -152,12 +180,6 @@ def reconstruct_alignment(samfile: pysam.AlignmentFile):
     alignment_df = pl.DataFrame(temp_list)
     return alignment_df, counter_forward, counter_reverse
 
-
-"""
-Read (r) and reference (ref) sequence are compared base by base to verify the alignment quality
-"""
-
-
 def percentage_of_fits_parrallel(
     index: int,
     alignment_df_row: list,
@@ -165,6 +187,46 @@ def percentage_of_fits_parrallel(
     reference_sequence: str,
     identity: float,
 ):
+    """
+    Calculates the percentage of bases in an alignment row that match the reference sequence and checks if it meets a given identity threshold.
+
+    Parameters:
+    -----------
+    index : int
+        The index of the current alignment row being processed.
+    alignment_df_row : list
+        A list containing the sequence information for the alignment row. The expected format is [sequence, ref_start, ref_end].
+    reference_length : int
+        The length of the reference sequence.
+    reference_sequence : str
+        The reference nucleotide sequence against which the alignment is compared.
+    identity : float
+        The identity threshold for the proportion of matching bases required to consider the alignment as fitting.
+
+    Returns:
+    --------
+    tuple
+        A tuple containing:
+        - int: The index of the alignment row if the percentage of fitting bases meets or exceeds the identity threshold, otherwise -1.
+        - float: The percentage of fitting bases if it meets the identity threshold, otherwise -1.
+
+    The function performs the following steps:
+    1. Constructs the full sequence of the alignment row, including padding with gaps to match the reference length.
+    2. Iterates through the reference sequence and the alignment row sequence to count the total bases and the number of matching bases.
+    3. Calculates the percentage of matching bases.
+    4. Checks if the percentage of matching bases meets the identity threshold.
+    5. Returns the index and percentage of matching bases if the threshold is met, otherwise returns -1 for both values.
+    
+    Example:
+    --------
+    >>> index = 0
+    >>> alignment_df_row = ["ATCG", 2, 6]
+    >>> reference_length = 10
+    >>> reference_sequence = "NNATCGNNNN"
+    >>> identity = 0.75
+    >>> percentage_of_fits_parrallel(index, alignment_df_row, reference_length, reference_sequence, identity)
+    (0, 1.0)
+    """
     row_sequence = (
         "-" * alignment_df_row[1]
         + alignment_df_row[0]
@@ -203,7 +265,58 @@ def argmax_of_min_overlap_fragment_association_parallel(
     query_row_id: str,
     fragment_df: pd.DataFrame,
 ):
+    """
+    Identifies the fragment with the maximum overlap with the query sequence and calculates the fitting statistics.
 
+    Parameters:
+    -----------
+    query_row_seq : str
+        The sequence of the query row.
+    query_row_refstart : int
+        The reference start position of the query row.
+    query_row_refend : int
+        The reference end position of the query row.
+    query_row_length : int
+        The length of the query row sequence.
+    query_row_id : str
+        The ID of the query row.
+    fragment_df : pd.DataFrame
+        A DataFrame containing fragment information. Must include columns "Sequence", "Start", "End", "Length", and "Fragment".
+
+    Returns:
+    --------
+    fitting_stats : list of lists
+        A list where each element is a list containing query row IDs that best fit the corresponding fragment.
+    fitting_stat_overlap : float
+        The overlap ratio between the query sequence and the fragment with the maximum overlap.
+    fitting_stat_matches : float
+        The match ratio between the query sequence and the fragment with the maximum overlap.
+    fitting_stat_fragment : Any
+        The fragment that has the maximum overlap with the query sequence.
+    query_row_id : str
+        The ID of the query row.
+
+    This function performs the following steps:
+    1. Initializes lists to store fitting statistics.
+    2. Constructs the full query sequence by padding with '*' characters based on reference start and end positions.
+    3. Iterates over each fragment in the fragment DataFrame.
+    4. Calculates the overlap and match ratios between the query sequence and each fragment.
+    5. Determines the fragment with the maximum overlap.
+    6. Returns the fitting statistics and the query row ID.
+
+    Example:
+    --------
+    >>> fragment_df = pd.DataFrame({
+    >>>     "Sequence": ["ATCG", "CGTA", "TACG"],
+    >>>     "Start": [0, 5, 10],
+    >>>     "End": [10, 15, 20],
+    >>>     "Length": [10, 10, 10],
+    >>>     "Fragment": ["frag1", "frag2", "frag3"]
+    >>> })
+    >>> result = argmax_of_min_overlap_fragment_association_parallel(
+    >>>     "ATCG", 0, 10, 10, "query1", fragment_df
+    >>> )
+    """
     fitting_stats = [[] for i in range(0, len(fragment_df))]
     fitting_stat_overlap = []
     fitting_stat_matches = []
@@ -268,6 +381,34 @@ def create_colored_bed(
     output_file: str = "",
     sample_type: str = "",
 ):
+    """
+    Generates BED files with colored annotations based on read counts from a CSV file.
+
+    Parameters:
+    -----------
+    table_name : str
+        The path to the input CSV file containing genomic data.
+    output_folder : str
+        The folder where the output BED files will be saved.
+    output_file : str
+        The name of the output BED file.
+    sample_type : str
+        The sample type which determines the color scheme to be applied. 
+        Acceptable values are "Nucleus", "blue", "Cytoplasm", "red", "SN1", "green", 
+        "SN2", "orange", "SN3", and "purple".
+
+    The function reads the input CSV file, assigns colors to each row based on the 
+    `rel_n_Reads` value and the specified sample type, and writes two BED files:
+    1. A full BED file with all data.
+    2. A filtered BED file containing only rows with `rel_n_Reads` greater than 0.001.
+
+    The color assignment follows a predefined scheme for each sample type:
+    - "Nucleus" / "blue" : various shades of blue.
+    - "Cytoplasm" / "red" : various shades of red.
+    - "SN1" / "green" : various shades of green.
+    - "SN2" / "orange" : various shades of orange.
+    - "SN3" / "purple" : various shades of purple.
+    """
     df = pd.read_csv(table_name, sep=";", header=0)
 
     colors_list = []
@@ -394,6 +535,36 @@ The mean and standarddeviation between all positions with start- or end-sites is
 
 
 def determine_general_cut_sites(alignment_df: pl.DataFrame, output: str):
+    """
+    Determines general cut sites based on alignment data and saves results in CSV and BED formats.
+
+    Parameters:
+    -----------
+    alignment_df : pl.DataFrame
+        DataFrame containing alignment information with columns "Refstart" and "Refend".
+    output : str
+        Path to the output directory where results will be saved.
+
+    This function performs the following steps:
+    1. Initializes lists to store start and end sites.
+    2. Constructs a list of sequence bases from the reference.
+    3. Iterates through each alignment row to count start and end sites.
+    4. Computes mean and standard deviation of start and end sites.
+    5. Determines thresholds for identifying significant start and end points.
+    6. Flags sequences as starting or ending points based on thresholds.
+    7. Saves the results in a CSV file named "cutting_sites_general.csv".
+    8. Iterates through flagged start and end sites to create BED format data.
+    9. Saves start sites in a BED file named "start_sites_general.bed".
+    10. Saves end sites in a BED file named "end_sites_general.bed".
+
+    Example:
+    --------
+    >>> alignment_data = pl.DataFrame({
+    >>>     "Refstart": [10, 20, 30],
+    >>>     "Refend": [15, 25, 35]
+    >>> })
+    >>> determine_general_cut_sites(alignment_data, "/path/to/output/")
+    """
     start_sites = [0 for i in range(len(fasta_file.fetch(reference)))]
     end_sites = [0 for i in range(len(fasta_file.fetch(reference)))]
     sequence_list = [base for base in str(fasta_file.fetch(reference))]
@@ -477,6 +648,45 @@ Intersecting fragment site values are determined by using the mean and the mean 
 def determine_fragment_based_cut_sites(
     alignment_df: pl.DataFrame, fragment_df: pd.DataFrame, output: str
 ):
+    """
+    Determines fragment-based cut sites based on alignment and fragment data and saves results in CSV and BED formats.
+
+    Parameters:
+    -----------
+    alignment_df : pl.DataFrame
+        DataFrame containing alignment information with columns "Refstart" and "Refend".
+    fragment_df : pd.DataFrame
+        DataFrame containing fragment information with columns "Start", "End", "Fragment", "Length".
+    output : str
+        Path to the output directory where results will be saved.
+
+    This function performs the following steps:
+    1. Filters fragment DataFrame to include only specified fragments.
+    2. Initializes lists to store start and end sites.
+    3. Constructs a list of sequence bases from the reference.
+    4. Iterates through each alignment row to count start and end sites.
+    5. Calculates mean and standard deviation of start and end sites for each fragment.
+    6. Computes thresholds for identifying significant start and end points based on fragment statistics.
+    7. Flags sequences as starting or ending points based on computed thresholds.
+    8. Saves the results in a CSV file named "cutting_sites_fragment_based.csv".
+    9. Iterates through flagged start and end sites to create BED format data.
+    10. Saves start sites in a BED file named "start_sites_fragment_based.bed".
+    11. Saves end sites in a BED file named "end_sites_fragment_based.bed".
+
+    Example:
+    --------
+    >>> alignment_data = pl.DataFrame({
+    >>>     "Refstart": [10, 20, 30],
+    >>>     "Refend": [15, 25, 35]
+    >>> })
+    >>> fragment_data = pd.DataFrame({
+    >>>     "Start": [5, 10, 15],
+    >>>     "End": [8, 13, 18],
+    >>>     "Fragment": ["5ETS", "ITS1", "ITS2"],
+    >>>     "Length": [4, 3, 4]
+    >>> })
+    >>> determine_fragment_based_cut_sites(alignment_data, fragment_data, "/path/to/output/")
+    """
     cut_sides_df = fragment_df.loc[
         fragment_df["Fragment"].isin(
             ["5ETS", "ITS1", "ITS2", "3ETS", "18S", "5-8S", "28S"]

@@ -112,12 +112,40 @@ logger.setLevel("INFO")
 #                                                                                                                                   #
 #####################################################################################################################################
 
-"""
-An alignment between Reference and read sequences is reconstructed in a pandas dataframe using the syntax documented in pysam.
-"""
-
-
 def reconstruct_alignment(samfile: pysam.AlignmentFile):
+    """
+    Reconstructs alignment of sequences from a SAM/BAM file and creates a DataFrame with alignment information.
+
+    Parameters:
+    -----------
+    samfile : pysam.AlignmentFile
+        A pysam.AlignmentFile object representing the SAM/BAM file to be processed.
+
+    Returns:
+    --------
+    tuple
+        A tuple containing:
+        - alignment_df: A polars DataFrame with the reconstructed alignment information. Columns include:
+            - "ID" : The read/query name.
+            - "Sequence" : The reconstructed aligned sequence.
+            - "Proportion_Sequence" : An empty list (placeholder for future calculations).
+            - "Length" : The length of the aligned sequence on the reference.
+            - "Refstart" : The reference start position.
+            - "Refend" : The reference end position.
+            - "n_Reads" : The number of reads (always 1 for each entry).
+            - "IDS" : A list containing the read/query name.
+        - counter_forward: int, the number of forward reads processed.
+        - counter_reverse: int, the number of reverse reads processed.
+
+    The function processes each read in the SAM/BAM file, reconstructing the aligned sequence using the CIGAR string 
+    and read sequence information. It tracks the number of forward and reverse reads and compiles the results 
+    into a polars DataFrame.
+    
+    Example:
+    --------
+    >>> samfile = pysam.AlignmentFile("example.bam", "rb")
+    >>> alignment_df, forward_count, reverse_count = reconstruct_alignment(samfile)
+    """
     counter_forward = 0
     counter_reverse = 0
     temp_list = []
@@ -160,13 +188,40 @@ def reconstruct_alignment(samfile: pysam.AlignmentFile):
     return alignment_df, counter_forward, counter_reverse
 
 
-"""
-Intensity matrix spans over reference_length x reference_length, which is initialized with 0. Start and Edn point of reads are used to increment the x,y position on the matrix 
-to obtain an start-end site intensity matrix. Similarly the read_position is stored in an start,end dictionairy using the coordiantes as keys.
-"""
-
-
 def create_intensity_matrix(fusion_alignment_df: pl.DataFrame):
+    """
+    Creates an intensity matrix from a DataFrame of fusion alignments and returns a matrix for DBSCAN clustering.
+
+    Parameters:
+    -----------
+    fusion_alignment_df : pl.DataFrame
+        A polars DataFrame containing fusion alignment information. The DataFrame must include the following columns:
+        - "Refstart" : The reference start position of the alignment.
+        - "Refend" : The reference end position of the alignment.
+        - "ID" : The read/query name.
+
+    Returns:
+    --------
+    tuple
+        A tuple containing:
+        - dbscan_matrix: np.ndarray, a 2D array of coordinates with non-zero intensity values. This array is suitable
+          for use with DBSCAN clustering.
+        - id_dict: dict, a dictionary mapping "Refstart:Refend" string keys to lists of read/query IDs that correspond
+          to those start and end positions.
+
+    The function constructs a 2D intensity matrix where the value at position (x, y) represents the number of alignments
+    that start at position x and end at position y. It also creates a dictionary that maps each unique "Refstart:Refend"
+    combination to a list of IDs that have those start and end positions.
+    
+    Example:
+    --------
+    >>> fusion_alignment_df = pl.DataFrame({
+            "Refstart": [1, 2, 3],
+            "Refend": [5, 6, 7],
+            "ID": ["read1", "read2", "read3"]
+        })
+    >>> dbscan_matrix, id_dict = create_intensity_matrix(fusion_alignment_df)
+    """
     intensity_matrix = np.zeros(
         (
             max(fusion_alignment_df["Refend"]) + 1,
@@ -190,10 +245,6 @@ def create_intensity_matrix(fusion_alignment_df: pl.DataFrame):
     return dbscan_matrix, id_dict
 
 
-"""
-The intensity matrix is used to perform an hdbscan clustering with the goal to find similar fragments in the dataset based on the density distribution.
-"""
-
 
 def hdbscan_clustering(
     fusion_alignment_df: pl.DataFrame,
@@ -201,6 +252,43 @@ def hdbscan_clustering(
     id_dict: dict,
     min_number_of_neighbours: int,
 ):
+    """
+    Performs HDBSCAN clustering on fusion alignment data and returns grouped read IDs and a DataFrame of single reads.
+
+    Parameters:
+    -----------
+    fusion_alignment_df : pl.DataFrame
+        A polars DataFrame containing fusion alignment information.
+    dbscan_matrix : np.array
+        A 2D numpy array of coordinates with non-zero intensity values, used for clustering.
+    id_dict : dict
+        A dictionary mapping "Refstart:Refend" string keys to lists of read/query IDs that correspond to those start and end positions.
+    min_number_of_neighbours : int
+        The minimum number of neighboring points required for HDBSCAN to consider a point as part of a cluster.
+
+    Returns:
+    --------
+    tuple
+        A tuple containing:
+        - list_read_groups: list, a list of lists where each inner list contains read IDs grouped into a cluster.
+        - single_reads_df: pl.DataFrame, a DataFrame containing reads that were not clustered.
+
+    The function performs the following steps:
+    1. Applies HDBSCAN clustering on the provided `dbscan_matrix`.
+    2. Constructs a DataFrame from the clustering results, associating each coordinate with a cluster label.
+    3. Uses the labels to group read IDs into clusters or mark them as single reads.
+    4. Compiles a list of grouped read IDs and a DataFrame of single reads.
+    
+    Example:
+    --------
+    >>> fusion_alignment_df = pl.DataFrame({
+            "Refstart": [1, 2, 3],
+            "Refend": [5, 6, 7],
+            "ID": ["read1", "read2", "read3"]
+        })
+    >>> dbscan_matrix, id_dict = create_intensity_matrix(fusion_alignment_df)
+    >>> list_read_groups, single_reads_df = hdbscan_clustering(fusion_alignment_df, dbscan_matrix, id_dict, 5)
+    """
     result = HDBSCAN(min_cluster_size=min_number_of_neighbours).fit(dbscan_matrix)
     dbscan_dataframe = pd.DataFrame(dbscan_matrix, columns=["Start", "End"])
     dbscan_dataframe["Labels"] = np.array(result.labels_).astype(int)
@@ -234,14 +322,57 @@ def hdbscan_clustering(
     return list_read_groups, single_reads_df
 
 
-"""
-The output of the hdbscan function determines which reads can be considered to origin from the same fragment. 
-The function performs an additive approach to determine a consensus sequence of all reads belonging to a common fragment. 
-The final sequence is determined by the most common base at a given position from the minstart to the maxend of the determined reads.
-"""
-
-
 def fusion_read_groups(temp_df: pl.DataFrame, reference_dict: dict):
+    """
+    Generates a consensus sequence and related information from a group of fusion reads.
+
+    Parameters:
+    -----------
+    temp_df : pl.DataFrame
+        A polars DataFrame containing the fusion read information. The DataFrame must include the following columns:
+        - "ID": Read/query name.
+        - "Sequence": Nucleotide sequence of the read.
+        - "Refstart": Start position of the read on the reference.
+        - "Refend": End position of the read on the reference.
+        - "n_Reads": Number of reads contributing to this entry.
+    reference_dict : dict
+        A dictionary containing reference information, with a key "Length" indicating the length of the reference sequence.
+
+    Returns:
+    --------
+    dict
+        A dictionary with the following keys:
+        - "ID": A string representing the range of the consensus sequence and the number of reads, formatted as "min_refstart:max_refend:number_of_reads".
+        - "Sequence": The consensus nucleotide sequence.
+        - "Proportion_Sequence": A list of lists representing the absolute base count at each position in the consensus sequence.
+        - "Length": The length of the consensus sequence.
+        - "Refstart": The start position of the consensus sequence.
+        - "Refend": The end position of the consensus sequence.
+        - "n_Reads": The total number of reads contributing to the consensus sequence.
+        - "IDS": A list of read/query IDs contributing to the consensus sequence.
+
+    The function performs the following steps:
+    1. Determines the minimum start and maximum end positions from the provided DataFrame.
+    2. Initializes a position array to count nucleotide occurrences at each position.
+    3. Iterates through each read in the DataFrame, updating the position array based on the nucleotide counts.
+    4. Constructs the consensus sequence by selecting the most frequent nucleotide at each position.
+    5. Adjusts the consensus sequence to fit within the reference length, padding with gaps as needed.
+    6. Calculates the absolute base counts for each position in the consensus sequence.
+    7. Determines the true start and end positions of the consensus sequence by trimming leading and trailing gaps.
+    8. Returns a dictionary containing the consensus sequence and related information.
+    
+    Example:
+    --------
+    >>> temp_df = pl.DataFrame({
+            "ID": ["read1", "read2"],
+            "Sequence": ["ATCG", "ATGG"],
+            "Refstart": [0, 1],
+            "Refend": [4, 5],
+            "n_Reads": [1, 1]
+        })
+    >>> reference_dict = {"Length": 6}
+    >>> output_dict = fusion_read_groups(temp_df, reference_dict)
+    """
     reference_length = int(reference_dict["Length"])
     if not temp_df.is_empty():
         min_refstart = min(temp_df["Refstart"])
@@ -321,6 +452,46 @@ def percentage_of_fits_parrallel(
     reference_sequence: str,
     identity: float,
 ):
+    """
+    Calculates the percentage of bases in an alignment row that match the reference sequence and checks if it meets a given identity threshold.
+
+    Parameters:
+    -----------
+    index : int
+        The index of the current alignment row being processed.
+    alignment_df_row : list
+        A list containing the sequence information for the alignment row. The expected format is [sequence, ref_start, ref_end].
+    reference_length : int
+        The length of the reference sequence.
+    reference_sequence : str
+        The reference nucleotide sequence against which the alignment is compared.
+    identity : float
+        The identity threshold for the proportion of matching bases required to consider the alignment as fitting.
+
+    Returns:
+    --------
+    tuple
+        A tuple containing:
+        - int: The index of the alignment row if the percentage of fitting bases meets or exceeds the identity threshold, otherwise -1.
+        - float: The percentage of fitting bases if it meets the identity threshold, otherwise -1.
+
+    The function performs the following steps:
+    1. Constructs the full sequence of the alignment row, including padding with gaps to match the reference length.
+    2. Iterates through the reference sequence and the alignment row sequence to count the total bases and the number of matching bases.
+    3. Calculates the percentage of matching bases.
+    4. Checks if the percentage of matching bases meets the identity threshold.
+    5. Returns the index and percentage of matching bases if the threshold is met, otherwise returns -1 for both values.
+    
+    Example:
+    --------
+    >>> index = 0
+    >>> alignment_df_row = ["ATCG", 2, 6]
+    >>> reference_length = 10
+    >>> reference_sequence = "NNATCGNNNN"
+    >>> identity = 0.75
+    >>> percentage_of_fits_parrallel(index, alignment_df_row, reference_length, reference_sequence, identity)
+    (0, 1.0)
+    """
     row_sequence = (
         "-" * alignment_df_row[1]
         + alignment_df_row[0]
@@ -343,17 +514,40 @@ def percentage_of_fits_parrallel(
         return -1, -1
 
 
-"""
-The function creates bed files with fragments, which can be visualized in igv. Different colorscheme were applied for different conditions
-"""
-
-
 def create_colored_bed(
     table_name: str = "",
     output_folder: str = output,
     output_file: str = "",
     sample_type: str = "",
 ):
+    """
+    Generates BED files with colored annotations based on read counts from a CSV file.
+
+    Parameters:
+    -----------
+    table_name : str
+        The path to the input CSV file containing genomic data.
+    output_folder : str
+        The folder where the output BED files will be saved.
+    output_file : str
+        The name of the output BED file.
+    sample_type : str
+        The sample type which determines the color scheme to be applied. 
+        Acceptable values are "Nucleus", "blue", "Cytoplasm", "red", "SN1", "green", 
+        "SN2", "orange", "SN3", and "purple".
+
+    The function reads the input CSV file, assigns colors to each row based on the 
+    `rel_n_Reads` value and the specified sample type, and writes two BED files:
+    1. A full BED file with all data.
+    2. A filtered BED file containing only rows with `rel_n_Reads` greater than 0.001.
+
+    The color assignment follows a predefined scheme for each sample type:
+    - "Nucleus" / "blue" : various shades of blue.
+    - "Cytoplasm" / "red" : various shades of red.
+    - "SN1" / "green" : various shades of green.
+    - "SN2" / "orange" : various shades of orange.
+    - "SN3" / "purple" : various shades of purple.
+    """
     df = pd.read_csv(table_name, sep=";", header=0)
     colors_list = []
     if sample_type == "Nucleus" or sample_type == "blue":
@@ -468,15 +662,42 @@ def create_colored_bed(
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
 
 
-"""
-This function mediates the intensity matrix construction, hdbscan clustering and consensus sequence determination processes.  
-"""
-
-
 def hdbscan_fusion(
     fusion_alignment_df: pl.DataFrame = pl.DataFrame(),
     min_number_of_neighbours: int = 5,
 ):
+    """
+    Performs hierarchical density-based spatial clustering of applications with noise (HDBSCAN) on fusion alignment data to identify clusters of reads,
+    and generates consensus sequences for each cluster.
+
+    Parameters:
+    -----------
+    fusion_alignment_df : pl.DataFrame, optional
+        A DataFrame containing fusion alignment data, by default an empty DataFrame.
+    min_number_of_neighbours : int, optional
+        The minimum number of neighbors for a point to be considered a core point in HDBSCAN, by default 5.
+
+    Returns:
+    --------
+    consensus_df : pd.DataFrame
+        A DataFrame containing the consensus sequences for each cluster, along with their metadata and the percentage of bases fitting the reference.
+    single_reads_df : pl.DataFrame
+        A DataFrame containing the reads that were not clustered.
+
+    The function performs the following steps:
+    1. Creates a reference dictionary with metadata about the reference sequence.
+    2. Creates an intensity matrix and ID dictionary from the fusion alignment DataFrame.
+    3. Performs HDBSCAN clustering on the intensity matrix.
+    4. Generates consensus sequences for each cluster.
+    5. Calculates the percentage of bases in the consensus sequences that match the reference sequence.
+    6. Returns the consensus sequences DataFrame and the single reads DataFrame.
+    
+    Example:
+    --------
+    >>> fusion_alignment_df = pl.DataFrame({"ID": ["read1", "read2"], "Refstart": [0, 5], "Refend": [10, 15], "Sequence": ["ATCG", "CGTA"], "n_Reads": [1, 1]})
+    >>> min_number_of_neighbours = 3
+    >>> consensus_df, single_reads_df = hdbscan_fusion(fusion_alignment_df, min_number_of_neighbours)
+    """  
     reference_dict = {
         "ID": str(reference),
         "Sequence": str(fasta_file.fetch(reference)),
