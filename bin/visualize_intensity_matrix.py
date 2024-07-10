@@ -255,7 +255,7 @@ def plot_matrix(
     alphas = alphas + 0.01
     alphas[alphas > 1] = 1
 
-    layout = go.Layout(width=800,height = 800)
+    layout = go.Layout(height = 800)
     fig2 = go.Figure(layout=layout)
     fig2.add_trace(
         go.Scatter(

@@ -290,7 +290,7 @@ fig.add_trace(
     go.Scatter(
         x=[i for i in range(0, len(reference_sequence))],
         y=[0 for i in range(0, len(reference_sequence))],
-        name="O-line",
+        name="",
         line_color="white",
         line_width=0.1,
     )
