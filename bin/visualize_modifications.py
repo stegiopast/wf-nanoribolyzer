@@ -145,10 +145,8 @@ dataset = {
 modification_df = pd.DataFrame(dataset)
 modification_df.to_csv(f"{output_path}/modification_quantification.csv",sep=";",header=True,index=None)
 
-fig = go.Figure()
-
-
-fig = go.Figure()
+layout = go.Layout(height = 800)
+fig = go.Figure(layout=layout)
 
 
 fig.add_trace(
@@ -209,15 +207,16 @@ for index,T_position in T_mod_df.iterrows():
 
 fig.update_layout(
     title=f"Modification basecalling",
-    xaxis=dict(title="Position on reference",gridcolor = "white"),
+    xaxis=dict(title="Position on reference",gridcolor = "white",tickformat="d"),
     yaxis=dict(title="Modification frequency",gridcolor = "white"),
     plot_bgcolor='rgba(0,0,0,0)',
 )
 
-plotly.offline.plot(fig, filename=f"{output_path}/relative_pseU_modification_abundance.html")
+#plotly.offline.plot(fig, filename=f"{output_path}/relative_pseU_modification_abundance.html")
+plotly.io.write_html(fig, f"{output_path}/relative_pseU_modification_abundance.html")
 
-
-fig2 = go.Figure()
+layout = go.Layout(height = 800)
+fig2 = go.Figure(layout=layout)
 fig2.add_trace(
     go.Scatter(
         x=[index for index in range(len(rel_mod_positions_m6a))],
@@ -264,10 +263,10 @@ for index,A_position in A_mod_df.iterrows():
 
 
 fig2.update_layout(
-    title=f"Modification basecalling",
-    xaxis=dict(title="Position on reference",gridcolor = "white"),
+    xaxis=dict(title="Position on reference",gridcolor = "white",tickformat="d"),
     yaxis=dict(title="Modification frequency",gridcolor = "white"),
     plot_bgcolor='rgba(0,0,0,0)'
 )
 
-plotly.offline.plot(fig2, filename=f"{output_path}/relative_m6A_modification_abundance.html")
+#plotly.offline.plot(fig2, filename=f"{output_path}/relative_m6A_modification_abundance.html")
+plotly.io.write_html(fig2, f"{output_path}/relative_m6A_modification_abundance.html")

@@ -101,7 +101,7 @@ pre_template_df = pl.read_csv(
 )
 
 
-pre_template_df = pre_template_df.sort(by="rel_n_Reads", descending=True)[
+pre_template_df = pre_template_df.sort(by=["rel_n_Reads","Refend"], descending=[True,False])[
     0 : min(300, pre_template_df.shape[0])
 ]
 
@@ -133,45 +133,46 @@ template_df = pl.DataFrame(template_dict)
 joined_df = template_df.join(
     taillength_df, left_on="ID", right_on="read_id", how="inner"
 ).to_pandas()
+joined_df = joined_df.dropna()
 
 
-def filter_outliers(
-    df, column, lower_percentile=0.25, upper_percentile=0.75, multiplier=2
-):
-    """
-    Filters out outliers from a DataFrame based on the Interquartile Range (IQR) method.
+# def filter_outliers(
+#     df, column, lower_percentile=0.25, upper_percentile=0.75, multiplier=2
+# ):
+#     """
+#     Filters out outliers from a DataFrame based on the Interquartile Range (IQR) method.
     
-    Parameters:
-    df (pd.DataFrame): The input DataFrame.
-    column (str): The name of the column for which outliers are to be filtered.
-    lower_percentile (float): The lower percentile to calculate Q1 (default is 0.25).
-    upper_percentile (float): The upper percentile to calculate Q3 (default is 0.75).
-    multiplier (float): The multiplier for the IQR to define the cutoff boundaries (default is 2).
+#     Parameters:
+#     df (pd.DataFrame): The input DataFrame.
+#     column (str): The name of the column for which outliers are to be filtered.
+#     lower_percentile (float): The lower percentile to calculate Q1 (default is 0.25).
+#     upper_percentile (float): The upper percentile to calculate Q3 (default is 0.75).
+#     multiplier (float): The multiplier for the IQR to define the cutoff boundaries (default is 2).
     
-    Returns:
-    pd.DataFrame: A DataFrame with outliers filtered out based on the specified criteria.
+#     Returns:
+#     pd.DataFrame: A DataFrame with outliers filtered out based on the specified criteria.
     
-    Example:
-    >>> data = {'Category': ['A', 'B', 'C', 'A', 'B', 'C'], 'Value': [1, 5, 3, 2, 6, 4]}
-    >>> df = pd.DataFrame(data)
-    >>> filtered_df = filter_outliers(df, 'Value')
-    >>> print(filtered_df)
-    """
-    # Calculate the IQR
-    Q1 = df[column].quantile(lower_percentile)
-    Q3 = df[column].quantile(upper_percentile)
-    IQR = Q3 - Q1
+#     Example:
+#     >>> data = {'Category': ['A', 'B', 'C', 'A', 'B', 'C'], 'Value': [1, 5, 3, 2, 6, 4]}
+#     >>> df = pd.DataFrame(data)
+#     >>> filtered_df = filter_outliers(df, 'Value')
+#     >>> print(filtered_df)
+#     """
+#     # Calculate the IQR
+#     Q1 = df[column].quantile(lower_percentile)
+#     Q3 = df[column].quantile(upper_percentile)
+#     IQR = Q3 - Q1
 
-    # Define the cutoff boundaries
-    lower_bound = Q1 - (IQR * multiplier)
-    upper_bound = Q3 + (IQR * multiplier)
+#     # Define the cutoff boundaries
+#     lower_bound = Q1 - (IQR * multiplier)
+#     upper_bound = Q3 + (IQR * multiplier)
 
-    # Filter the data
-    filtered_df = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
-    return filtered_df, Q1, Q3
+#     # Filter the data
+#     filtered_df = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+#     return filtered_df, Q1, Q3
 
 
-joined_df, lower_quantile, upper_quantile = filter_outliers(joined_df, "taillength")
+#joined_df, lower_quantile, upper_quantile = filter_outliers(joined_df, "taillength")
 # print(joined_df)
 
 color_dict = {}
@@ -189,6 +190,8 @@ for sample, color in zip(
 
 ids_for_violin_plot = [id for id in pre_template_df["ID"][0:20]]
 violin_joined_df = joined_df[joined_df["position"].isin(ids_for_violin_plot)]
+violin_joined_df = violin_joined_df.sort_values(by=["end","start"],ascending=[True,True])
+
 
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 8), dpi=500)
@@ -196,9 +199,8 @@ sns.violinplot(
     data=violin_joined_df,
     x="position",
     y="taillength",
-    cut=0,
     ax=ax,
-    inner_kws=dict(box_width=5, whis_width=1, color="0.5"),
+    inner_kws=dict(box_width=2, whis_width=1, color="0.5"),
     color=color_dict[color_sample],
 )
 group_sizes = violin_joined_df["position"].value_counts().sort_index().reset_index()
@@ -218,7 +220,7 @@ for element in violin_joined_df["position"].unique():
 for i, v in enumerate(n_reads_per_group):
     ax.text(
         i,
-        1,
+        int(max(violin_joined_df["taillength"]) * 1.02),
         f"n={v}",
         ha="center",
         va="bottom",
@@ -227,11 +229,11 @@ for i, v in enumerate(n_reads_per_group):
     )
 
 
-ax.set_ylim(0, 101)
-ax.set_yticks([i for i in range(0, 101, 1)])
-ax.set_yticklabels([str(i) if (i % 5) == 0 else "" for i in range(0, 101, 1)])
+ax.set_ylim(0,  int(max(violin_joined_df["taillength"]) * 1.1))
+ax.set_yticks([i for i in range(0,  int(max(violin_joined_df["taillength"]) * 1.1), 5)])
+ax.set_yticklabels([str(i) if (i % 10) == 0 else "" for i in range(0,  int(max(violin_joined_df["taillength"]) * 1.1), 5)], fontsize=5)
 ax.set_xticks(ax.get_xticks())
-ax.set_xticklabels(ax.get_xticklabels(), fontsize=4, rotation=45)
+ax.set_xticklabels(ax.get_xticklabels(), fontsize=5, rotation=45)
 ax.set_xlabel("Ribosomal intermediate")
 ax.set_ylabel("PolyA-tail length")
 fig.savefig(f"{output_path}/violinplot_taillength_per_cluster.png", format="png")
@@ -281,7 +283,8 @@ joined_df_summary.to_csv(
     f"{output_path}/taillength_per_cluster.csv", sep="\t", header=True, index=None
 )
 
-fig = go.Figure()
+layout = go.Layout(height = 800)
+fig = go.Figure(layout=layout)
 
 fig.add_trace(
     go.Scatter(
@@ -296,7 +299,7 @@ fig.add_trace(
 max_n_reads = joined_df_summary["n_reads"].max()
 
 joined_df_summary = joined_df_summary.sort_values(
-    by=["end", "start"], ascending=[False, True]
+    by=["end", "start"], ascending=[False, False]
 )
 
 joined_df_summary = pd.DataFrame(joined_df_summary).fillna(value=0)
@@ -355,14 +358,14 @@ for (
         )
     )
     fig.update_layout(
-        title=f"Read clusters and polyA taillengths",
-        xaxis=dict(title="Position on reference", gridcolor="white"),
+        xaxis=dict(title="Position on reference", gridcolor="white", tickformat="d"),
         yaxis=dict(
             title="Cluster",
             gridcolor="white",
             zeroline=True,
             zerolinecolor="white",
             zerolinewidth=0.1,
+            tickformat="d",
         ),
         plot_bgcolor="rgba(0,0,0,0)",
     )
@@ -405,4 +408,5 @@ for index, row in fragment_df.iterrows():
         font=dict(size=12),
     )
 
-plotly.offline.plot(fig, filename=f"{output_path}/polyA_tails_clustering.html")
+#plotly.offline.plot(fig, filename=f"{output_path}/polyA_tails_clustering.html")
+plotly.io.write_html(fig, f"{output_path}/polyA_tails_clustering.html")

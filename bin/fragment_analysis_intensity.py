@@ -13,6 +13,8 @@ import json
 import logging
 import sys
 import polars as pl
+import plotly.graph_objects as go
+import plotly
 
 
 #####################################################################################################################################
@@ -69,6 +71,14 @@ opt_parser.add_argument(
     metavar="FILE",
 )
 
+opt_parser.add_argument(
+    "-d",
+    "--demand",
+    dest="demand",
+    help="Use high or low demand algorithms ? (Results can slightly vary)",
+    metavar="FILE",
+)
+
 options = opt_parser.parse_args()
 
 bamfile_name = options.bamfile_name
@@ -77,6 +87,7 @@ output = options.output
 identity = float(options.identity)
 sample_type = str(options.sample_type)
 cores = int(options.cores)
+demand = str(options.demand)
 
 # Logger construction
 logger = logging.getLogger(__name__)
@@ -107,42 +118,22 @@ logger.setLevel("INFO")
 #####################################################################################################################################
 
 def reconstruct_alignment(samfile: pysam.AlignmentFile):
-    """
-    Reconstructs alignment of sequences from a SAM/BAM file and creates a DataFrame with alignment information.
-
-    Parameters:
-    -----------
-    samfile : pysam.AlignmentFile
-        A pysam.AlignmentFile object representing the SAM/BAM file to be processed.
-
-    Returns:
-    --------
-    tuple
-        A tuple containing:
-        - alignment_df: A polars DataFrame with the reconstructed alignment information. Columns include:
-            - "ID" : The read/query name.
-            - "Sequence" : The reconstructed aligned sequence.
-            - "Proportion_Sequence" : An empty list (placeholder for future calculations).
-            - "Length" : The length of the aligned sequence on the reference.
-            - "Refstart" : The reference start position.
-            - "Refend" : The reference end position.
-            - "n_Reads" : The number of reads (always 1 for each entry).
-            - "IDS" : A list containing the read/query name.
-        - counter_forward: int, the number of forward reads processed.
-        - counter_reverse: int, the number of reverse reads processed.
-
-    The function processes each read in the SAM/BAM file, reconstructing the aligned sequence using the CIGAR string 
-    and read sequence information. It tracks the number of forward and reverse reads and compiles the results 
-    into a polars DataFrame.
-    
-    Example:
-    --------
-    >>> samfile = pysam.AlignmentFile("example.bam", "rb")
-    >>> alignment_df, forward_count, reverse_count = reconstruct_alignment(samfile)
-    """
     counter_forward = 0
     counter_reverse = 0
     temp_list = []
+    alignment_df = pl.DataFrame(
+        schema={
+            "ID": pl.String,
+            "Sequence": pl.String,
+            "Proportion_Sequence": pl.List(pl.List(pl.Int32)),
+            "Length": pl.Int32,
+            "Refstart": pl.Int32,
+            "Refend": pl.Int32,
+            "n_Reads": pl.Int64,
+            "IDS": pl.List(pl.String),
+            "alignment_probability": pl.Float64,
+        }
+    )
     for read in tqdm(samfile.fetch(), total=number_of_reads):
         if read.is_forward:
             counter_forward += 1
@@ -176,9 +167,42 @@ def reconstruct_alignment(samfile: pysam.AlignmentFile):
             "Refend": read.reference_end,
             "n_Reads": 1,
             "IDS": [read.query_name],
+            "alignment_probability": 1-(10**-(read.mapping_quality/10))
         }
         temp_list.append(read_data)
-    alignment_df = pl.DataFrame(temp_list)
+        if len(temp_list) >= 1000000:
+            chunk_alignment_df = pl.DataFrame(
+                temp_list,
+                schema={
+                    "ID": pl.String,
+                    "Sequence": pl.String,
+                    "Proportion_Sequence": pl.List(pl.List(pl.Int32)),
+                    "Length": pl.Int32,
+                    "Refstart": pl.Int32,
+                    "Refend": pl.Int32,
+                    "n_Reads": pl.Int64,
+                    "IDS": pl.List(pl.String),
+                    "alignment_probability": pl.Float64,
+                },
+            )
+            alignment_df = pl.concat([alignment_df, chunk_alignment_df])
+            temp_list = []
+    chunk_alignment_df = pl.DataFrame(
+        temp_list,
+        schema={
+            "ID": pl.String,
+            "Sequence": pl.String,
+            "Proportion_Sequence": pl.List(pl.List(pl.Int32)),
+            "Length": pl.Int32,
+            "Refstart": pl.Int32,
+            "Refend": pl.Int32,
+            "n_Reads": pl.Int64,
+            "IDS": pl.List(pl.String),
+            "alignment_probability": pl.Float64,
+        },
+    )
+    alignment_df = pl.concat([alignment_df, chunk_alignment_df])
+    temp_list = []
     return alignment_df, counter_forward, counter_reverse
 
 
@@ -311,6 +335,26 @@ def intensity_clustering(
     single_reads_df = fusion_alignment_df.filter(pl.col("ID").is_in(single_read_ids))
     return list_read_groups, single_reads_df
 
+def fusion_read_groups_low_demand(temp_df: pl.DataFrame, reference_dict: dict):
+    if not temp_df.is_empty():
+        mean_refstart = int(temp_df["Refstart"].mean())
+        mean_refend = int(temp_df["Refend"].mean())
+        final_consensus_ids = [id for id in temp_df["ID"]]
+        number_of_reads = sum(temp_df["n_Reads"])
+        string = reference_dict["Sequence"][mean_refstart:mean_refend]
+        min_max_length = mean_refend - mean_refstart
+        absolute_base_count_array = []
+        output_dict = {
+            "ID": f"{mean_refstart}:{mean_refend}:{number_of_reads}",
+            "Sequence": string,
+            "Proportion_Sequence": absolute_base_count_array,
+            "Length": min_max_length,
+            "Refstart": mean_refstart,
+            "Refend": mean_refend,
+            "n_Reads": number_of_reads,
+            "IDS": final_consensus_ids,
+        }
+        return output_dict
 
 def fusion_read_groups(temp_df: pl.DataFrame, reference_dict: dict):
     """
@@ -663,7 +707,9 @@ def create_colored_bed(
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
 
 
-def intensity_fusion(fusion_alignment_df=pl.DataFrame()):
+def intensity_fusion(
+    fusion_alignment_df=pl.DataFrame(),
+    demand: str="low"):
     """
     Performs fusion alignment processing using intensity clustering to find consensus sequences.
 
@@ -718,13 +764,31 @@ def intensity_fusion(fusion_alignment_df=pl.DataFrame()):
     consensus_rows = []
     logger.info("Find consensus of defined clusters")
     # temp_fusion_alignment_df = fusion_alignment_df
-    for id_list in tqdm(list_read_groups, total=len(list_read_groups)):
-        out_dict = fusion_read_groups(
-            fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),
-            reference_dict,
-        )
-        # temp_fusion_alignment_df = temp_fusion_alignment_df.lazy().filter(~pl.col("ID").is_in(id_list)).collect()
-        consensus_rows.append(out_dict)
+    if demand == "high":
+        for id_list in tqdm(list_read_groups, total=len(list_read_groups)):
+            out_dict = fusion_read_groups(
+                fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),
+                reference_dict,
+            )
+            # temp_fusion_alignment_df = temp_fusion_alignment_df.lazy().filter(~pl.col("ID").is_in(id_list)).collect()
+            consensus_rows.append(out_dict)
+    else:
+        temp_fusion_alignment_df = fusion_alignment_df.select([
+            "ID",
+            "Length",
+            "Refstart",
+            "Refend",
+            "n_Reads",
+            "alignment_probability"
+        ])
+        for id_list in tqdm(list_read_groups, total=len(list_read_groups)):
+            id_set = set(id_list)
+            out_dict = fusion_read_groups_low_demand(
+                temp_fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_set)).collect(),
+                reference_dict,
+            )
+            # temp_fusion_alignment_df = temp_fusion_alignment_df.lazy().filter(~pl.col("ID").is_in(id_list)).collect()
+            consensus_rows.append(out_dict)
     consensus_df = pd.DataFrame.from_dict(consensus_rows)
     consensus_df = consensus_df.sort_values(
         by=["Refstart", "Length"], ascending=[True, False]
@@ -811,29 +875,32 @@ reference_len = len(fasta_file.fetch(reference))
 reference_seq = str(fasta_file.fetch(reference))
 
 # Alignment Quality control
-with Pool(cores) as p:
-    pool_output = p.starmap(
-        percentage_of_fits_parrallel,
-        zip(
-            indices_list,
-            read_list_df,
-            repeat(reference_len),
-            repeat(reference_seq),
-            repeat(identity),
-        ),
-    )
-selected_indices = []
-for objects in pool_output:
-    if objects[0] >= 0:
-        selected_indices.append(objects[0])
-read_list_df = []
-p.close()
+if demand == "high":    
+    with Pool(cores) as p:
+        pool_output = p.starmap(
+            percentage_of_fits_parrallel,
+            zip(
+                indices_list,
+                read_list_df,
+                repeat(reference_len),
+                repeat(reference_seq),
+                repeat(identity),
+            ),
+        )
+    selected_indices = []
+    for objects in pool_output:
+        if objects[0] >= 0:
+            selected_indices.append(objects[0])
+    read_list_df = []
+    p.close()
 
-alignment_df = alignment_df[selected_indices]
+    alignment_df = alignment_df[selected_indices]
+if demand == "low": 
+    alignment_df = alignment_df.filter(pl.col("alignment_probability") >= identity)
 alignment_df = alignment_df.sort(["Refstart", "Length"], descending=[False, True])
 
 logger.info("Perform intensity clustering")
-final_df, single_reads_df = intensity_fusion(alignment_df)
+final_df, single_reads_df = intensity_fusion(alignment_df,demand)
 final_df["rel_n_Reads"] = final_df["n_Reads"] / number_of_reads
 final_df.to_csv(f"{output}fragment_df.csv", sep=";")
 total_number_of_clustered_reads = sum(final_df["n_Reads"])

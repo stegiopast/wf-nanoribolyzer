@@ -38,8 +38,8 @@ end_sites_df = pd.read_csv(end_sites_df_path,sep="\t")
 end_sites_df.columns = ["reference","start","end","type","score","strand","thikstart","thikend","color"]
 end_sites_df["score"] = end_sites_df["score"]/1000000
 
-
-fig = go.Figure()
+layout = go.Layout(height = 800)
+fig = go.Figure(layout=layout)
 fig.add_trace(
     go.Scatter(
         x = [i for i in range(0,len(reference_sequence))],
@@ -72,7 +72,6 @@ fig.add_trace(
 
 
 fig.update_layout(
-    title=f"Cut-sites",
     xaxis=dict(
         title="Position on reference",
         gridcolor = "lightgray",
@@ -87,9 +86,8 @@ fig.update_layout(
     plot_bgcolor='rgba(0,0,0,0)'
 )
 
-plotly.offline.plot(fig, filename=f"{output_path}/cut_sites.html")
-
-
+#plotly.offline.plot(fig, filename=f"{output_path}/cut_sites.html")
+plotly.io.write_html(fig, f"{output_path}/cut_sites.html")
 
 
 

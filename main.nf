@@ -43,6 +43,9 @@ println "Sample type"
 println params.sample_type
 println ""
 
+println "Demand"
+println params.demand
+println ""
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                                                         // 
@@ -62,7 +65,7 @@ process dorado_basecalling{
     publishDir "${params.out_dir}", mode: 'copy'
     input:
     path(sample_folder)
-    path(basecalling_model)
+    val basecalling_model
 
     output:
     val done
@@ -173,7 +176,7 @@ process align_to_45SN1{
 //                                                                                                                                                         // 
 //                                                                                                                                                         //
 //                                                                                                                                                         //
-//                                                             Filter for read sin fast5 that align 45SN1                                                  //
+//                                                             Filter for reads in fast5 that align 45SN1                                                  //
 //                                                                                                                                                         //
 //                                                                                                                                                         //
 //                                                                                                                                                         //
@@ -245,7 +248,7 @@ process rebasecall_filtered_files{
     input:
         path(filtered_pod5)
         path(reference), stageAs: "reference.fasta"
-        path(basecalling_model)
+        val basecalling_model
     output:
         val 1, emit: done
         path("filtered_pod5_basecalled.bam") , emit: rebasecalled_bam
@@ -329,7 +332,7 @@ process fragment_analysis_hdbscan{
         val 1, emit: done
     
     """
-    python ${projectDir}/bin/fragment_analysis_hdbscan.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -m 5 -s ${params.color}
+    python ${projectDir}/bin/fragment_analysis_hdbscan.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -m 5 -s ${params.color} -d ${params.demand}
     """
 }
 
@@ -362,7 +365,7 @@ process fragment_analysis_intensity{
         path("*")
         val 1, emit: done
     """
-    python ${projectDir}/bin/fragment_analysis_intensity.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -s ${params.color}
+    python ${projectDir}/bin/fragment_analysis_intensity.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -s ${params.color} -d ${params.demand}
     """
 }
 
@@ -397,7 +400,7 @@ process template_driven_fragment_analysis{
         path("*")
         val 1, emit: done
     """
-    python ${projectDir}/bin/template_driven_fragment_analysis.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -f template.csv -o ./ -t 0.9 -s ${params.color}
+    python ${projectDir}/bin/template_driven_fragment_analysis.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -f template.csv -o ./ -t 0.9 -s ${params.color} -d ${params.demand}
     """
 }
 
@@ -602,6 +605,33 @@ process visualize_cut_sites{
     """
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                                                         // 
+//                                                                                                                                                         //
+//                                                                                                                                                         //
+//                                                         Visualize reference coverage                                                                    //
+//                                                                                                                                                         //
+//                                                                                                                                                         //
+//                                                                                                                                                         //
+//                                                                                                                                                         //
+//                                                                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+process visualize_reference_coverage{
+    label 'other_tools'
+    publishDir "${params.out_dir}/coverage_plots/", mode:"copy"
+    input:
+        path(template_alignment_csv)
+        path(templates)
+        path(reference)
+    output:
+        path("*.png")
+        val 1, emit: done
+    """
+    python ${projectDir}/bin/visualize_rRNA_coverage.py -a ${template_alignment_csv} -f ${templates}  -r ${reference} -o ./ -c ${params.color}
+    """
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                                                         // 
@@ -625,6 +655,7 @@ process check_all_done {
         val visualize_polyA_associated_hdbscan_clusters_done;
         val visualize_modifications_done;
         val visualize_cut_sites_done;
+        val visualize_reference_coverage_done;
     output:
         val 1, emit: done
     """
@@ -646,11 +677,12 @@ process check_all_done {
 
 process create_report {
     label 'other_tools'
-    publishDir "${params.out_dir}/report/", mode: "copy"
+    publishDir "${params.out_dir}/", mode: "copy"
     input:
     // Mandatory inputs
     val all_done_verification
     path intensity_matrix_png, stageAs: "intensity_matrix/intensity_matrix.png"
+    path intensity_matrix_html, stageAs: "intensity_matrix/intensity_matrix.html"
     path polyA_tails_intermediates_template_html, stageAs: "polyA_template_based/polyA_tails_intermediates_template.html"
     path polyA_tails_intermediates_min_max_html, stageAs: "polyA_template_based/polyA_tails_intermediates_min_max.html"
     path polyA_tails_intermediates_mean_html, stageAs: "polyA_template_based/polyA_tails_intermediates_mean.html"
@@ -660,6 +692,13 @@ process create_report {
     path violinplot_taillength_per_cluster_png, stageAs: "polyA_intensity_based_clusters/violinplot_taillength_per_cluster.png"
     path polyA_tails_hdbscan_clustering_html, stageAs: "polyA_hdbscan_based_clusters/polyA_tails_clustering.html"
     path violinplot_taillength_per_hdbscan_cluster_png, stageAs: "polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"
+    path coverage_plot_general_absolute, stageAs: "coverage_plots/coverage_fragments_absolute.png"
+    path coverage_plot_general_relative, stageAs: "coverage_plots/coverage_fragments_relative.png"
+    path coverage_plot_fragments_absolute, stageAs:"coverage_plots/coverage_fragments_absolute_all.png"
+    path coverage_plot_fragments_absolute, stageAs:"coverage_plots/coverage_total_sample_absolute.png"
+    path coverage_plot_fragments_relative, stageAs:"coverage_plots/coverage_total_sample_relative.png"
+    
+
     // Optional inputs
     path relative_pseU_modification_abundance_html, stageAs: "modification_plots/relative_pseU_modification_abundance.html"
     path relative_m6A_modification_abundance_html, stageAs: "modification_plots/relative_m6A_modification_abundance.html"
@@ -726,7 +765,7 @@ workflow{
         template_driven_fragment_analysis.out.template_csv
         )
     visualize_intensity_matrix(
-        fragment_analysis_intensity.out.alignment_df,
+        template_driven_fragment_analysis.out.template_alignment_csv,
         file("${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv")
         )
     visualize_polyA_associated_templates(
@@ -757,17 +796,24 @@ workflow{
         template_driven_fragment_analysis.out.end_sites,
         file("${projectDir}/references/RNA45SN1.fasta")
         )
+    visualize_reference_coverage(
+        template_driven_fragment_analysis.out.template_alignment_csv,
+        file("${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv"),
+        file("${projectDir}/references/RNA45SN1.fasta")
+    )
     check_all_done(
         visualize_intensity_matrix.out.done,
         visualize_polyA_associated_templates.out.done,
         visualize_polyA_associated_intensity_clusters.out.done,
         visualize_polyA_associated_hdbscan_clusters.out.done, 
         visualize_modifications.out.done, 
-        visualize_cut_sites.out.done
+        visualize_cut_sites.out.done,
+        visualize_reference_coverage.out.done
         )
     create_report(
             check_all_done.out.done,
             file("${params.out_dir}/intensity_matrix/intensity_matrix.png"),
+            file("${params.out_dir}/intensity_matrix/intensity_matrix.html"),
             file("${params.out_dir}/polyA_template_based/polyA_tails_intermediates_template.html"),
             file("${params.out_dir}/polyA_template_based/polyA_tails_intermediates_min_max.html"),
             file("${params.out_dir}/polyA_template_based/polyA_tails_intermediates_mean.html"),
@@ -777,8 +823,13 @@ workflow{
             file("${params.out_dir}/polyA_intensity_based_clusters/violinplot_taillength_per_cluster.png"),
             file("${params.out_dir}/polyA_hdbscan_based_clusters/polyA_tails_clustering.html"),
             file("${params.out_dir}/polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"),
+            file("${params.out_dir}/coverage_plots/coverage_fragments_absolute.png"),
+            file("${params.out_dir}/coverage_plots/coverage_fragments_relative.png"),
+            file("${params.out_dir}/coverage_plots/coverage_fragments_absolute_all.png"),
+            file("${params.out_dir}/coverage_plots/coverage_total_sample_absolute.png"),
+            file("${params.out_dir}/coverage_plots/coverage_total_sample_relative.png"),
             file("${params.out_dir}/modification_plots/relative_pseU_modification_abundance.html"),
-            file("${params.out_dir}/modification_plots/relative_m6A_modification_abundance.html")
+            file("${params.out_dir}/modification_plots/relative_m6A_modification_abundance.html")  
     )
 }
 

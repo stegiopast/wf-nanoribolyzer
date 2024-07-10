@@ -70,6 +70,15 @@ opt_parser.add_argument(
     metavar="FILE",
 )
 
+opt_parser.add_argument(
+    "-d",
+    "--demand",
+    dest="demand",
+    help="Use high or low demand algorithms ? (Results can slightly vary)",
+    metavar="FILE",
+)
+
+
 options = opt_parser.parse_args()
 
 
@@ -80,6 +89,7 @@ output = options.output
 identity = float(options.identity)
 sample_type = options.sample_type
 cores = int(options.cores)
+demand = str(options.demand)
 
 # Logger construction
 logger = logging.getLogger(__name__)
@@ -106,42 +116,22 @@ logger.setLevel("INFO")
 #####################################################################################################################################
 
 def reconstruct_alignment(samfile: pysam.AlignmentFile):
-    """
-    Reconstructs alignment of sequences from a SAM/BAM file and creates a DataFrame with alignment information.
-
-    Parameters:
-    -----------
-    samfile : pysam.AlignmentFile
-        A pysam.AlignmentFile object representing the SAM/BAM file to be processed.
-
-    Returns:
-    --------
-    tuple
-        A tuple containing:
-        - alignment_df: A polars DataFrame with the reconstructed alignment information. Columns include:
-            - "ID" : The read/query name.
-            - "Sequence" : The reconstructed aligned sequence.
-            - "Proportion_Sequence" : An empty list (placeholder for future calculations).
-            - "Length" : The length of the aligned sequence on the reference.
-            - "Refstart" : The reference start position.
-            - "Refend" : The reference end position.
-            - "n_Reads" : The number of reads (always 1 for each entry).
-            - "IDS" : A list containing the read/query name.
-        - counter_forward: int, the number of forward reads processed.
-        - counter_reverse: int, the number of reverse reads processed.
-
-    The function processes each read in the SAM/BAM file, reconstructing the aligned sequence using the CIGAR string 
-    and read sequence information. It tracks the number of forward and reverse reads and compiles the results 
-    into a polars DataFrame.
-    
-    Example:
-    --------
-    >>> samfile = pysam.AlignmentFile("example.bam", "rb")
-    >>> alignment_df, forward_count, reverse_count = reconstruct_alignment(samfile)
-    """
     counter_forward = 0
     counter_reverse = 0
     temp_list = []
+    alignment_df = pl.DataFrame(
+        schema={
+            "ID": pl.String,
+            "Sequence": pl.String,
+            "Proportion_Sequence": pl.List(pl.List(pl.Int32)),
+            "Length": pl.Int32,
+            "Refstart": pl.Int32,
+            "Refend": pl.Int32,
+            "n_Reads": pl.Int64,
+            "IDS": pl.List(pl.String),
+            "alignment_probability": pl.Float64,
+        }
+    )
     for read in tqdm(samfile.fetch(), total=number_of_reads):
         if read.is_forward:
             counter_forward += 1
@@ -175,9 +165,42 @@ def reconstruct_alignment(samfile: pysam.AlignmentFile):
             "Refend": read.reference_end,
             "n_Reads": 1,
             "IDS": [read.query_name],
+            "alignment_probability": 1-(10**-(read.mapping_quality/10))
         }
         temp_list.append(read_data)
-    alignment_df = pl.DataFrame(temp_list)
+        if len(temp_list) >= 1000000:
+            chunk_alignment_df = pl.DataFrame(
+                temp_list,
+                schema={
+                    "ID": pl.String,
+                    "Sequence": pl.String,
+                    "Proportion_Sequence": pl.List(pl.List(pl.Int32)),
+                    "Length": pl.Int32,
+                    "Refstart": pl.Int32,
+                    "Refend": pl.Int32,
+                    "n_Reads": pl.Int64,
+                    "IDS": pl.List(pl.String),
+                    "alignment_probability": pl.Float64,
+                },
+            )
+            alignment_df = pl.concat([alignment_df, chunk_alignment_df])
+            temp_list = []
+    chunk_alignment_df = pl.DataFrame(
+        temp_list,
+        schema={
+            "ID": pl.String,
+            "Sequence": pl.String,
+            "Proportion_Sequence": pl.List(pl.List(pl.Int32)),
+            "Length": pl.Int32,
+            "Refstart": pl.Int32,
+            "Refend": pl.Int32,
+            "n_Reads": pl.Int64,
+            "IDS": pl.List(pl.String),
+            "alignment_probability": pl.Float64,
+        },
+    )
+    alignment_df = pl.concat([alignment_df, chunk_alignment_df])
+    temp_list = []
     return alignment_df, counter_forward, counter_reverse
 
 def percentage_of_fits_parrallel(
@@ -901,26 +924,29 @@ read_list_df = [intermediate_list[i] for i in tqdm(indices_list)]
 reference_len = len(fasta_file.fetch(reference))
 reference_seq = str(fasta_file.fetch(reference))
 
-# Alignment quality checkup
-with Pool(cores) as p:
-    pool_output = p.starmap(
-        percentage_of_fits_parrallel,
-        zip(
-            indices_list,
-            read_list_df,
-            repeat(reference_len),
-            repeat(reference_seq),
-            repeat(identity),
-        ),
-    )
-selected_indices = []
-for objects in pool_output:
-    if objects[0] >= 0:
-        selected_indices.append(objects[0])
-read_list_df = []
-p.close()
+    #Alignment quality checkup
+if demand == "high":    
+    with Pool(cores) as p:
+        pool_output = p.starmap(
+            percentage_of_fits_parrallel,
+            zip(
+                indices_list,
+                read_list_df,
+                repeat(reference_len),
+                repeat(reference_seq),
+                repeat(identity),
+            ),
+        )
+    selected_indices = []
+    for objects in pool_output:
+        if objects[0] >= 0:
+            selected_indices.append(objects[0])
+    read_list_df = []
+    p.close()
 
-alignment_df = alignment_df[selected_indices]
+    alignment_df = alignment_df[selected_indices]
+if demand == "low": 
+    alignment_df = alignment_df.filter(pl.col("alignment_probability") >= identity)
 alignment_df = alignment_df.sort(["Refstart", "Length"], descending=[False, True])
 
 

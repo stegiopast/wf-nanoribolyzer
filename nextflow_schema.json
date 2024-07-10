@@ -14,75 +14,62 @@
             "description": "Parameters for finding and handling input data for NanoRibolyzer.",
             "properties": {
                 "sample_folder": {
+                    "title": "Pod5 folder",
                     "type": "string",
                     "format": "path",
-                    "title": "Pod5 folder",
                     "description": "Path to folder containing pod5 files",
                     "help_text": ""
                 },
                 "color": {
+                    "title": "Colorscheme",
                     "type": "string",
-                    "format": "path",
-                    "description": "BAM or unaligned BAM (uBAM) files to use in the analysis.",
-                    "help_text": "This accepts one of three cases: (i) the path to a single BAM file; (ii) the path to a top-level directory containing BAM files; (iii) the path to a directory containing one level of sub-directories which in turn contain BAM files. In the first and second case, a sample name can be supplied with `--sample`. In the last case, the data is assumed to be multiplexed with the names of the sub-directories as barcodes. In this case, a sample sheet can be provided with `--sample_sheet`."
+                    "enum":["red","blue","green","orange","purple"],
+                    "description": "Select a color for the html report and the plots",
+                    "help_text": ""
                 },
                 "basecalling_model": {
-                    "type": "string",
-                    "default": "path",
                     "title": "Basecalling Model",
-                    "description": " ",
-                    "help_text": "If selected and if the input is a multiplex directory the workflow will also process the unclassified directory."
+                    "type": "string",
+                    "enum": ["fast","hac","sup"], 
+                    "description": "Select the accuracy of the basecalleing model fast,hac or sup",
+                    "help_text": ""
                 },
                 "threads": {
+                    "tile": "Threads",
                     "type": "integer",
-                    "default": "integer",
+                    "enum": [1,2,3,4,5,6,7,8],
                     "description": "How many cores to use ?",
-                    "help_text": "Define the number of CPU cores to use"
+                    "help_text": "Define the number of CPU cores to use",
+                    "minimum": 1,
+                    "maximum": 8
+
                 },
                 "sample_type": {
+                    "title": "Sample type",
                     "type": "string",
-                    "format": "file-path",
+                    "enum": ["DNA","RNA"],
                     "description": "RNA or DNA?",
-                    "help_text": "provide information whether DNA or RNA is used",
-                    "hidden": true
+                    "help_text": "provide information whether DNA or RNA is used"
                 },
                 "out_dir": {
+                    "title": "Output directory",
                     "type": "string",
-                    "format": "file-path",
+                    "format": "path",
                     "description": "Path to the output directory",
-                    "help_text": "Define an output directory on your system.",
-                    "hidden": true
+                    "help_text": "Define an output directory on your system."
+                },
+                "demand": {
+                    "title":"Demand",
+                    "type": "string",
+                    "enum": ["high","low"],
+                    "description": "Demand high or low computational ressources",
+                    "help_text": "Define high or low to select. For big datasets the runtime can be very high when using high. You will obtain a computed consensus sequence of clustered reads, when using high demand."
                 }
             },
             "oneOf": [
                 {
                     "required": [
                         "sample_folder"
-                    ]
-                },
-                {
-                    "required": [
-                        "color"
-                    ]
-                },
-                {
-                    "required": [
-                        "basecalling_model"
-                    ]
-                },
-                {
-                    "required": [
-                        "threads"
-                    ]
-                },
-                {
-                    "required": [
-                        "sample_type"
-                    ]
-                },
-                {
-                    "required": [
-                        "color"
                     ]
                 }
             ]
@@ -156,14 +143,14 @@
     },
     "resources": {
         "recommended": {
-            "cpus": 8,
-            "memory": "64GB"
+            "cpus": 4,
+            "memory": "128GB"
         },
         "minimum": {
             "cpus": 4,
-            "memory": "32GB"
+            "memory": "64GB"
         },
-        "run_time": "5 minutes per sample",
+        "run_time": "~10 hours per sample",
         "arm_support": true 
     }
 }
