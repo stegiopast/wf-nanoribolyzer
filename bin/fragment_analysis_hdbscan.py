@@ -347,8 +347,8 @@ def hdbscan_clustering(
 
 def fusion_read_groups_low_demand(temp_df: pl.DataFrame, reference_dict: dict):
     if not temp_df.is_empty():
-        mean_refstart = int(temp_df["Refstart"].mean())
-        mean_refend = int(temp_df["Refend"].mean())
+        mean_refstart = int(min(temp_df["Refstart"]))
+        mean_refend = int(max(temp_df["Refend"]))
         final_consensus_ids = [id for id in temp_df["ID"]]
         number_of_reads = sum(temp_df["n_Reads"])
         string = reference_dict["Sequence"][mean_refstart:mean_refend]

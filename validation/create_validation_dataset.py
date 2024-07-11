@@ -85,7 +85,7 @@ with open(f"{output}/validation.fastq", 'w') as file:
     file.write("")
 
 while n_extracted_reads < n_reads:
-    fractionizer = [100000] * 25 + [50000] * 50 + [25000] * 100 + [12000] * 50 + [6000] * 25 + [100] * 12 
+    fractionizer = [50000] * 25 + [25000] * 50 + [12000] * 100 + [6000] * 50 + [3000] * 25 + [100] * 10 
     fractionizer_index = random.randrange(0,len(fractionizer))
     current_number_of_reads = n_reads // fractionizer[fractionizer_index] 
     #print(current_number_of_reads)
@@ -93,8 +93,8 @@ while n_extracted_reads < n_reads:
         current_number_of_reads = n_reads - n_extracted_reads
     n_extracted_reads += current_number_of_reads
     for index in range(current_number_of_reads):
-        cut_start = random.randrange(1,5,1)
-        cut_end = random.randrange(1,5,1)
+        cut_start = 2 #random.randrange(1,2,1)
+        cut_end = 2 #random.randrange(1,2,1)
         current_string = str(reference_string[current_start_coordinate:current_end_coordinate])
         random_changes_indices = [random.randrange(0,len(current_string),1) for i in range(int(len(current_string)*0.05))]
         change_type = [random.randrange(1,4,1) for i in range(len(random_changes_indices))]
@@ -177,7 +177,7 @@ bed_of_reads = dataframe_of_reads[["reference","start","end","iteration","score"
 with open(f"{output}validation_dataset.bed", 'w') as fp:
     fp.write(bed_of_reads.to_csv(sep="\t",header=False,index=False))
 
-    
-os.system(f"minimap2 -ax map-ont ~/NanoRibolyzer/references/RNA45SN1.fasta {output}validation.fastq | samtools sort | samtools view -hbS -F 3884 > {output}validation.bam")
-os.system(f"samtools index {output}validation.bam")
-os.system(f"bamToBed -i {output}validation.bam > {output}validation.bed")
+os.mkdir(f"{output}/basecalling_output/")
+os.system(f"minimap2 -ax map-ont ~/NanoRibolyzer/references/RNA45SN1.fasta {output}validation.fastq | samtools sort | samtools view -hbS -F 3884 > {output}/basecalling_output/filtered.bam")
+os.system(f"samtools index {output}/basecalling_output/filtered.bam")
+os.system(f"bamToBed -i {output}/basecalling_output/filtered.bam > {output}validation.bed")
