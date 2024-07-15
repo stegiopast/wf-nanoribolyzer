@@ -1,0 +1,7 @@
+sample_folder: /home/stefan/GiantDisk/Data_nano_ribolyzer/17_3_23_DRS_nonpolyA_Nucleus/fast5_original
+color: Nucleus
+script_folder: /home/data/wf-nanoribolyzer
+out_dir: /home/stefan/GiantDisk/run_dir_Ribolyzer_test
+basecalling_model: /home/stefan/dorado-0.4.3-linux-x64/bin/rna002_70bps_fast@v3
+threads: 15
+sample_type: RNA
