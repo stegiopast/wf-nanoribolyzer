@@ -445,14 +445,14 @@ def fusion_read_groups(temp_df: pl.DataFrame, reference_dict: dict):
         temp_string = (
             "-" * min_refstart + string + "-" * (reference_length - max_refend)
         )
-        min_refstart = len(temp_string)
-        max_refend = 0
-        for j, val in enumerate(temp_string):
-            if val != "-":
-                if j < min_refstart:
-                    min_refstart = j
-                if j > max_refend:
-                    max_refend = j
+        # min_refstart = len(temp_string)
+        # max_refend = 0
+        # for j, val in enumerate(temp_string):
+        #     if val != "-":
+        #         if j < min_refstart:
+        #             min_refstart = j
+        #         if j > max_refend:
+        #             max_refend = j
         min_max_length = max_refend - min_refstart
         string = temp_string[min_refstart:max_refend]
         output_dict = {
@@ -687,8 +687,10 @@ def create_colored_bed(
     with open(f"{output}most_abundant_{output_file}", "w") as fp:
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
 
+    
     mean = df["rel_n_Reads"].mean()
-    over_mean_df = df[df["rel_n_Reads"] > mean]
+    std = df["rel_n_Reads"].std()
+    over_mean_df = df[df["rel_n_Reads"] > (mean * 2*std)]
     bed_df = over_mean_df[
         [
             "ID",
@@ -704,6 +706,25 @@ def create_colored_bed(
     ]
     bed_df.iloc[:, 0] = "RNA45SN1"
     with open(f"{output}over_mean_{output_file}", "w") as fp:
+        fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
+
+
+    top100_df = df.sort_values(by="Score",ascending=False)[0:min(100,df.shape[0])]
+    bed_df = top100_df[
+        [
+            "ID",
+            "Refstart",
+            "Refend",
+            "ID",
+            "Score",
+            "Strand",
+            "Thikstart",
+            "Thikend",
+            "Colors",
+        ]
+    ]
+    bed_df.iloc[:, 0] = "RNA45SN1"
+    with open(f"{output}top_100_{output_file}", "w") as fp:
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
 
 
@@ -764,13 +785,28 @@ def intensity_fusion(
     consensus_rows = []
     logger.info("Find consensus of defined clusters")
     # temp_fusion_alignment_df = fusion_alignment_df
+    all_cluster_ids = []
+    for i in list_read_groups:
+        for j in i:
+            all_cluster_ids.append(j)
     if demand == "high":
+        temp_fusion_alignment_df = fusion_alignment_df.lazy().filter(pl.col("ID").is_in(all_cluster_ids)).collect()
+        list_read_groups.sort(key=len,reverse=True)
+        used_ids = []
+        iteration_counter = 0
         for id_list in tqdm(list_read_groups, total=len(list_read_groups)):
             out_dict = fusion_read_groups(
-                fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),
+                temp_fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),
                 reference_dict,
             )
-            # temp_fusion_alignment_df = temp_fusion_alignment_df.lazy().filter(~pl.col("ID").is_in(id_list)).collect()
+            for i in id_list:
+                used_ids.append(i)
+            if iteration_counter >= 100:
+                temp_fusion_alignment_df = temp_fusion_alignment_df.lazy().filter(~pl.col("ID").is_in(used_ids)).collect()
+                used_ids = []
+                iteration_counter = 0
+                print(temp_fusion_alignment_df.shape[0])
+            iteration_counter += 1
             consensus_rows.append(out_dict)
     else:
         temp_fusion_alignment_df = fusion_alignment_df.select([
@@ -781,13 +817,22 @@ def intensity_fusion(
             "n_Reads",
             "alignment_probability"
         ])
+        temp_fusion_alignment_df = temp_fusion_alignment_df.lazy().filter(pl.col("ID").is_in(all_cluster_ids)).collect()
+        list_read_groups.sort(key=len,reverse=True)
+        used_ids = []
+        iteration_counter = 0
         for id_list in tqdm(list_read_groups, total=len(list_read_groups)):
-            id_set = set(id_list)
             out_dict = fusion_read_groups_low_demand(
-                temp_fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_set)).collect(),
+                temp_fusion_alignment_df.lazy().filter(pl.col("ID").is_in(id_list)).collect(),
                 reference_dict,
             )
-            # temp_fusion_alignment_df = temp_fusion_alignment_df.lazy().filter(~pl.col("ID").is_in(id_list)).collect()
+            for i in id_list:
+                used_ids.append(i)
+            if iteration_counter >= 100:
+                temp_fusion_alignment_df = temp_fusion_alignment_df.lazy().filter(~pl.col("ID").is_in(used_ids)).collect()
+                used_ids = []
+                iteration_counter = 0
+            iteration_counter += 1
             consensus_rows.append(out_dict)
     consensus_df = pd.DataFrame.from_dict(consensus_rows)
     consensus_df = consensus_df.sort_values(

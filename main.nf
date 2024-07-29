@@ -333,6 +333,7 @@ process fragment_analysis_hdbscan{
     
     """
     python ${projectDir}/bin/fragment_analysis_hdbscan.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -m 5 -s ${params.color} -d ${params.demand}
+    python ${projectDir}/bin/visualize_clustering_performance_intensity_matrix.py -a ./alignment_df.csv -t ./no_template.bed -c ${params.color} -o ./
     """
 }
 
@@ -366,6 +367,7 @@ process fragment_analysis_intensity{
         val 1, emit: done
     """
     python ${projectDir}/bin/fragment_analysis_intensity.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -s ${params.color} -d ${params.demand}
+    python ${projectDir}/bin/visualize_clustering_performance_intensity_matrix.py -a ./alignment_df.csv -t ./no_template.bed -c ${params.color} -o ./
     """
 }
 
@@ -689,8 +691,10 @@ process create_report {
     path violinplot_taillength_per_intermediate_png, stageAs: "polyA_template_based/violinplot_taillength_per_intermediate.png"
     path cut_sites_html, stageAs: "cut_site_plots/cut_sites.html"
     path polyA_tails_clustering_html, stageAs: "polyA_intensity_based_clusters/polyA_tails_clustering.html"
+    path intensity_matrix_intensity_clustering, stageAs: "fragment_analysis_intensity/intensity_matrix.png"
     path violinplot_taillength_per_cluster_png, stageAs: "polyA_intensity_based_clusters/violinplot_taillength_per_cluster.png"
     path polyA_tails_hdbscan_clustering_html, stageAs: "polyA_hdbscan_based_clusters/polyA_tails_clustering.html"
+    path intensity_matrix_hdbscan_clustering, stageAs: "fragment_analysis_hdbscan/intensity_matrix.png"
     path violinplot_taillength_per_hdbscan_cluster_png, stageAs: "polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"
     path coverage_plot_general_absolute, stageAs: "coverage_plots/coverage_fragments_absolute.png"
     path coverage_plot_general_relative, stageAs: "coverage_plots/coverage_fragments_relative.png"
@@ -820,8 +824,10 @@ workflow{
             file("${params.out_dir}/polyA_template_based/violinplot_taillength_per_intermediate.png"),
             file("${params.out_dir}/cut_site_plots/cut_sites.html"),
             file("${params.out_dir}/polyA_intensity_based_clusters/polyA_tails_clustering.html"),
+            file("${params.out_dir}/fragment_analysis_intensity/intensity_matrix.png"),
             file("${params.out_dir}/polyA_intensity_based_clusters/violinplot_taillength_per_cluster.png"),
             file("${params.out_dir}/polyA_hdbscan_based_clusters/polyA_tails_clustering.html"),
+            file("${params.out_dir}/fragment_analysis_hdbscan/intensity_matrix.png"),
             file("${params.out_dir}/polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"),
             file("${params.out_dir}/coverage_plots/coverage_fragments_absolute.png"),
             file("${params.out_dir}/coverage_plots/coverage_fragments_relative.png"),

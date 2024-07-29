@@ -46,14 +46,6 @@ def generate_html_report(directory, output_file):
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Report ribosomal RNA analysis</title>
-            <style>
-                .centered-image {
-                    display: block;
-                    margin: 0 auto;
-                    text-align: center;
-                    vertical-align: middle;
-                }
-            </style>
         </head>
         <body>
         </body>
@@ -70,8 +62,13 @@ def generate_html_report(directory, output_file):
         padding: 0;
         justify-content: center;
         align-items: center;
-        height: 100vh;
     }
+    .centered-image {
+                    display: block;
+                    margin: 0 auto;
+                    text-align: center;
+                    vertical-align: middle;
+                }
     .header {
         background-color: #3b5861;
         padding: 10px;
@@ -86,7 +83,6 @@ def generate_html_report(directory, output_file):
     .menu {
         display: inline-block;
         vertical-align: middle;
-        margin-left: 50px;
     }
     .menu a {
         color: white;
@@ -105,18 +101,19 @@ def generate_html_report(directory, output_file):
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     """
-    
+    #margin-left: 50px;
     soup.head.append(style_tag)
+    body = soup.body
 
     # Add a header with a banner, a logo, and a menu bar
     header_tag = soup.new_tag('div', **{'class': 'header'})
-    soup.body.append(header_tag)
+    
 
     # Add a logo
     #logo_tag = soup.new_tag('img', src='logo.png', **{'class': 'logo', 'alt': 'Logo', 'width': '50', 'height': '50'})
     #header_tag.append(logo_tag)
 
-    # Add a menu bar
+    #Add a menu bar
     menu_tag = soup.new_tag('div', **{'class': 'menu'})
     header_tag.append(menu_tag)
 
@@ -149,7 +146,9 @@ def generate_html_report(directory, output_file):
     modification_detection_tag.string = 'Relative modification abundance'
     menu_tag.append(modification_detection_tag)
     
-    body = soup.body
+    body.append(header_tag)
+    
+    
 
 
 ########################
@@ -164,14 +163,14 @@ def generate_html_report(directory, output_file):
     )
     if os.path.exists(file_path):
         coverage_title_div = soup.new_tag('div', **{'class': 'section'})
-        coverage_title_tag = soup.new_tag('h1', id = 'coverage')
+        coverage_title_tag = soup.new_tag('h1', id= 'coverage')
         coverage_title_tag.string = 'Coverage ribosomal RNA'
         coverage_title_div.append(coverage_title_tag)   
         coverage_plots_text_tag = soup.new_tag('p')
         coverage_plots_text_tag.string = 'Absolute (left) and relative read coverage (right) of the ribosomal 45S template.\
             The plot show the read abundance in comparison to the alignment position on the reference.'
         coverage_title_div.append(coverage_plots_text_tag)
-        soup.body.append(coverage_title_div)
+        body.append(coverage_title_div)
         
         image_base64 = convert_image_to_base64(file_path)
         with open(file_path, "r") as f:
@@ -214,7 +213,6 @@ def generate_html_report(directory, output_file):
 ########################           
     
     div_tag2 = soup.new_tag('div', style="text-align: center;")
-    #parent_div2 = soup.new_tag('div', style="display: flex; justify-content: space-between;")
     file_path = os.path.join(
         directory, "coverage_plots/coverage_fragments_absolute.png"
     )
@@ -229,7 +227,7 @@ def generate_html_report(directory, output_file):
             templates is performed by determining the minimal overlap of each template-read pair.\
             The template showing maximal overlap between all possible template-read pairs is determined as associated reference.'
         fragment_coverage_title_div.append(fragment_coverage_plots_text_tag)
-        soup.body.append(fragment_coverage_title_div)
+        body.append(fragment_coverage_title_div)
         
         image_base64 = convert_image_to_base64(file_path)
         with open(file_path, "r") as f:
@@ -266,7 +264,6 @@ def generate_html_report(directory, output_file):
             body.append(soup.new_tag("br"))
             
     div_tag3 = soup.new_tag('div', style="text-align: center;")
-    #parent_div2 = soup.new_tag('div', style="display: flex; justify-content: space-between;")
     file_path = os.path.join(
         directory, "coverage_plots/coverage_fragments_absolute_all.png"
     )
@@ -293,7 +290,7 @@ def generate_html_report(directory, output_file):
     )
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
-            fragment_taillength_title_div = soup.new_tag('div', **{'class': 'section'})
+            fragment_taillength_title_div = soup.new_tag('div')
             fragment_taillength_title_tag = soup.new_tag('h1')
             fragment_taillength_title_tag.string = 'Taillenght of ribosomal templates'
             fragment_taillength_title_div.append(fragment_taillength_title_tag)
@@ -309,7 +306,7 @@ def generate_html_report(directory, output_file):
                 The template showing a maximal overlap between all possible template-read pairs is determined as reference for the given read.\
                 PolyA taillength is determined with the polya tail prediction function integrated in dorado.'
             fragment_taillength_title_div.append(template_based_analysis_tag)
-            soup.body.append(fragment_taillength_title_div)
+            body.append(fragment_taillength_title_div)
             
             # Read the content of the HTML file and append it to the body
             file_content = BeautifulSoup(f.read(), "html.parser")
@@ -384,11 +381,14 @@ def generate_html_report(directory, output_file):
                 Relative cut site abundance has been normalized by the absolute number of reads aligning to the 45S reference.\
                 For intersecting templates the significance threshold has been determined by the combined gaussian of both fragments.'
             cut_sites_title_div.append(cut_sites_text_tag)
-            soup.body.append(cut_sites_title_div)
+            body.append(cut_sites_title_div)
+            body.append(soup.new_tag("br"))
         
             # Read the content of the HTML file and append it to the body
             file_content = BeautifulSoup(f.read(), "html.parser")
             body.append(file_content)
+            body.append(soup.new_tag("br"))
+            
             
 ########################
 #                      #
@@ -408,7 +408,7 @@ def generate_html_report(directory, output_file):
             The interactive plot (bottom) represents a sub sampled version\
             of the intensity matrix showing the 25000 most abundant clusters.'
         intensity_matrix_title_div.append(intensity_matrix_tag)
-        soup.body.append(intensity_matrix_title_div)   
+        body.append(intensity_matrix_title_div)   
         
         image_base64 = convert_image_to_base64(file_path)
         with open(file_path, "r") as f:
@@ -457,14 +457,40 @@ def generate_html_report(directory, output_file):
             determined by reads sharing the same start and end sites on the 45S matrix.\
             The 300 biggest clusters are visualized.\
             Additionally, the mean and stdd of polyA-tails of the clusters are shown.\
-            The taillength is determined by the polya tail prediction function integrated in dorado.'
+            The taillength is determined by the polya tail prediction function integrated in dorado.\
+            For validation of the clustering approach the 300 biggest clusters are shown as squares above the instensity matrix\
+            ranging from start to end of reference on the coordinate system. The Upper left corner should allocate with a cluster showing a high intensity or read density.'
         intensity_clustering_title_div.append(intensity_clustering_tag)
-        soup.body.append(intensity_clustering_title_div)    
+        body.append(intensity_clustering_title_div)    
         
         with open(file_path, "r") as f:
             # Read the content of the HTML file and append it to the body
             file_content = BeautifulSoup(f.read(), "html.parser")
             body.append(file_content)
+    
+    file_path = os.path.join(
+        directory, "fragment_analysis_intensity/intensity_matrix.png"
+    )
+    if not os.path.exists(file_path):
+        file_path = os.path.join(
+        directory, "fragment_intensity_analysis/intensity_matrix.png"
+    )
+    if os.path.exists(file_path):
+        image_base64 = convert_image_to_base64(file_path)
+        with open(file_path, "r") as f:
+
+            # Create an <img> tag for PNG files
+            img_tag = soup.new_tag(
+                "img",
+                src=f"data:image/png;base64,{image_base64}",
+                alt="Clusters detected on intensity matrix",
+                attrs={"class": "centered-img"},
+                width=800,
+                height=800
+            )
+            div_tag = soup.new_tag('div', style="text-align: center;")
+            body.append(img_tag)
+            img_tag.wrap(div_tag)
 
     file_path = os.path.join(
         directory,
@@ -499,6 +525,8 @@ def generate_html_report(directory, output_file):
     file_path = os.path.join(
         directory, "polyA_hdbscan_based_clusters/polyA_tails_clustering.html"
     )
+    
+    
     if os.path.exists(file_path):
         hdbscan_clustering_title_div = soup.new_tag('div', **{'class': 'section'})
         hdbscan_clustering_title_tag = soup.new_tag('h1', id='hdbscan_clustering')
@@ -510,14 +538,41 @@ def generate_html_report(directory, output_file):
             determined by density based clustering approach using the intensity matrix as template.\
             The 300 biggest clusters are visualized.\
             Additionally, the mean and stdd of polyA-tails of the clusters are shown.\
-            The taillength is determined by the polya tail prediction function integrated in dorado.'
+            The taillength is determined by the polya tail prediction function integrated in dorado.\
+            For validation of the clustering approach the 300 biggest clusters are shown as squares above the instensity matrix\
+            ranging from start to end of reference on the coordinate system. The Upper left corner should allocate with a cluster showing a high intensity or read density.'
         hdbscan_clustering_title_div.append(hdbscan_clustering_tag)
-        soup.body.append(hdbscan_clustering_title_div)
+        body.append(hdbscan_clustering_title_div)
 
         with open(file_path, "r") as f:
             # Read the content of the HTML file and append it to the body
             file_content = BeautifulSoup(f.read(), "html.parser")
             body.append(file_content)
+
+    file_path = os.path.join(
+        directory, "fragment_analysis_hdbscan/intensity_matrix.png"
+    )
+    if not os.path.exists(file_path):
+        file_path = os.path.join(
+        directory, "fragment_hdbscan_analysis/intensity_matrix.png"
+    )
+    if os.path.exists(file_path):
+        image_base64 = convert_image_to_base64(file_path)
+        with open(file_path, "r") as f:
+
+            # Create an <img> tag for PNG files
+            img_tag = soup.new_tag(
+                "img",
+                src=f"data:image/png;base64,{image_base64}",
+                alt="Clusters detected on intensity matrix",
+                attrs={"class": "centered-img"},
+                width=800,
+                height=800
+            )
+            div_tag = soup.new_tag('div', style="text-align: center;")
+            body.append(img_tag)
+            img_tag.wrap(div_tag)
+
 
     file_path = os.path.join(
         directory, "polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"
@@ -562,7 +617,7 @@ def generate_html_report(directory, output_file):
         The modification detection is performed with the integrated dorado models for modification detection.\
         In the pseU plot the systematic C/U missmatch reported for pseU is added, since the dorado models are not taking missbasecalled bases in consideration.' 
         modification_title_div.append(modification_text_tag)
-        soup.body.append(modification_title_div)
+        body.append(modification_title_div)
         
         with open(file_path, "r") as f:
             # Read the content of the HTML file and append it to the body

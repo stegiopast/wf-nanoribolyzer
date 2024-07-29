@@ -101,10 +101,10 @@ pre_template_df = pl.read_csv(
 )
 
 
-pre_template_df = pre_template_df.sort(by=["rel_n_Reads","Refend"], descending=[True,False])[
+pre_template_df = pre_template_df.sort(by=["rel_n_Reads"], descending=[True])[
     0 : min(300, pre_template_df.shape[0])
 ]
-
+pre_template_df = pre_template_df.sort(by=["Refend"], descending=[False])
 
 template_dict = []
 for position, ids, refstart, refend, n_reads, rel_n_reads in zip(

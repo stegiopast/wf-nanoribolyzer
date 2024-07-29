@@ -127,10 +127,10 @@ def fragment_based_readtail_analysis(df_name,bamfile_name,output_path,logger):
                             nucleotide_counter += 1
                             position += 1
                             difference = position - nucleotide_counter
-                            if adenin_counter/max(position-difference-1,1) <= 0.7:
+                            if adenin_counter/max(position-difference-1,1) <= 0.5:
                                 #print(position)
                                 difference = position - nucleotide_counter
-                                while (reversed_read_sequence[position] != "A" or (adenin_counter/max(position - difference,1)) <= 0.95):
+                                while (reversed_read_sequence[position] != "A" or (adenin_counter/max(position - difference,1)) < 0.9):
                                     if position == 0:
                                         break
                                     polyA_sequence = read_sequence[-(position):-(difference)]
