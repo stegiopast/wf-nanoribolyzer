@@ -575,6 +575,8 @@ process visualize_modifications{
     if [ ${params.sample_type} == "RNA" ]
     then
         python ${projectDir}/bin/visualize_modifications.py -b ${rebasecalled_bam} -r ${reference} -m ${modifications_bed} -o ./
+    else
+        echo "cDNA used" > modifications.log
     fi
     """
 }
