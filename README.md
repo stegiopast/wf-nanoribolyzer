@@ -33,7 +33,7 @@ The reference-based algorithm performs an association of sequenced reads to lite
 
 # Template free fragment association
 
-![](./figures/Template_based_clustering.svg)
+![](./figures/Template_free_clustering.svg)
 
 The reference-free algorithms are based on a preceding intensity matrix construction. Read ids become embedded in a 45SN1 length x 45SN1 length matrix by using their start and end points of the alignment as coordinates. The intensity of a coordinate in the matrix is determined by the number of reads aligning to it. 
 
