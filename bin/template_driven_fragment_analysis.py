@@ -992,7 +992,7 @@ p.close()
 
 
 alignment_df = alignment_df.hstack([pl.Series("Overlap", fitting_stats_overlap)])
-alignment_df = alignment_df.hstack([pl.Series("Matches", fitting_stats_overlap)])
+alignment_df = alignment_df.hstack([pl.Series("Matches", fitting_stats_matches)])
 alignment_df = alignment_df.hstack(
     [pl.Series("Associated_Fragments_Overlap", fitting_stats_fragment)]
 )
