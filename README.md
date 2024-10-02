@@ -64,7 +64,7 @@ NanoRibolyzer performs an extraction of the last 20 nucleotides before a polyA t
 NanoRibolyzer provides files, tables and graphics in different subfolders. Here we describe all the outputs in detail to enable users the performance of downstream analysis. 
 All the outputs will be provided in the default workfolder of Epi2Me.
 
-.
+```bash
 ├── basecalling_output      # Data for basecalling, trimming and first alignment to 45SN1 of hg38
 │   ├── basecalled_not_trimmed.bam              # Basecalling output of dorado untrimmed
 │   ├── basecalled_not_trimmed.fastq.gz         # Converted fastq file of basecalling output untrimmed 
@@ -74,6 +74,7 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 |   ├── filtered.fastq.gz                       # Converted fastq file of filtered.bam 
 │   └── sequencing_summary.txt                  # Summary fuile of dorado basecalling
 └── ...
+``
 
 
 ## References
