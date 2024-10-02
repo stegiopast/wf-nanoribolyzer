@@ -66,16 +66,32 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 
 ```bash
 ├── basecalling_output      # Data for basecalling, trimming and first alignment to 45SN1 of hg38
-│   ├── basecalled_not_trimmed.bam              # Basecalling output of dorado untrimmed
+│   ├── basecalled_not_trimmed.bam              # Unaligned basecalling output of dorado untrimmed
 │   ├── basecalled_not_trimmed.fastq.gz         # Converted fastq file of basecalling output untrimmed 
 │   ├── basecalled.fastq.gz                     # Converted fastq file of basecalling output trimmed with porechop
 │   ├── filtered.bam                            # Alignment of basecalled.fastq.gz to 45SN1 of hg38 
-|   ├── filtered.bam.bai                        # Index for filtered.bam
-|   ├── filtered.fastq.gz                       # Converted fastq file of filtered.bam 
+│   ├── filtered.bam.bai                        # Index for above
+│   ├── filtered.fastq.gz                       # Converted fastq file of filtered.bam 
 │   └── sequencing_summary.txt                  # Summary fuile of dorado basecalling
+├── filtered_pod5
+│   ├── filtered.pod5                           # Pod5 file with files aligning to 45SN1 of hg38
+│   ├── filtered_pod5_basecalled.bam            # 45SN1 aligned basecalling output of dorado from filtered.pod5 untrimmed. This file includes move table (all) and modification tags (directRNA). 
+│   ├── filtered_pod5_basecalled.bam.bai        # Index for above
+│   └── sorted_filtered_reads.txt               # List with read_ids aligning 45SN1 of hg38
+├── fragment_hdbscan_analysis                   # Outputs of template free clustering approaches. Same structure is given for fragment_intensity_analysis. 
+│   ├── alignment_df.csv                        # List of aligned reads with aligned sequences reconstructed by cigarstrings, includes start and end sites on the reference
+│   ├── fragment_df.csv                         # For each fragment being determined by template free association a consensus sequence, proportional sequence, read ids, absolute and relative number of reads are provided
+│   ├── fragment_df_simple.csv                  # A simpler form of the table above
+│   ├── unclustered_reads_df.csv                # Stores all reads, which could not be clustered in a read group. The table has an equal format as alignment_df.csv  
+│   ├── no_template.bed                         # Representation of all fragments found with template free clustering approaches.    
+│   ├── most_abundant_no_template.bed           # Fragments found with template free clustering approaches carrying more than mean * 2stdd of the reads  
+│   ├── top_150_no_template.bed                 # Top 150 Fragments found with template free clustering carrying most of the reads
+│   └── fragment_analysis.log                   # Log script
+├── intensity_matrix    
+│   ├── intensity_matrix.csv                    # Table with read ids and number of reads aligning to (start site, end site) pairs  
+│   ├── intensity_matrix.html                   # Interactive html file with 50000 most abundant (start site, end site) pairs
+│   └── intensity_matrix.png                    # An image of the intensity matrix used for the clustering approach
 └── ...
-``
-
 
 ## References
 
