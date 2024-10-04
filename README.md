@@ -38,7 +38,7 @@ The reference-based algorithm performs an association of sequenced reads to lite
 The reference-free algorithms are based on a preceding intensity matrix construction. Read ids become embedded in a 45SN1 length x 45SN1 length matrix by using their start and end points of the alignment as coordinates. The intensity of a coordinate in the matrix is determined by the number of reads aligning to it. 
 
 1. In the first clustering approach all reads sharing a start and end site are interpreted as a read cluster. The approach is most performant with reads not underlying degradation processes. 
-2. The second approach is using a hierarchical density-based clustering approach with alternating neighbourhood (HDBSCAN) to cluster reads sharing similar start and end sites in the intensity matrix. HDBSCAN determines clusters of high intensity read groups having several neighbouring read groups in the intensity matrix. Coordinates on the intensity matrix with a high intensity lacking neighbours are defined as independent clusters. Resulting clusters of the HDBSCAN approach can be summarized by either constructing a consensus sequence of reads belonging to a cluster (higher demand) or by extracting a reference sequence from the 45SN1 of hg38 by using the minimal start point and the maximal end point of the cluster. (lower demand)  
+2. The second approach is using a hierarchical density-based clustering approach with alternating neighbourhood ([HDBSCAN]("https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html") to cluster reads sharing similar start and end sites in the intensity matrix. HDBSCAN determines clusters of high intensity read groups having several neighbouring read groups in the intensity matrix. Coordinates on the intensity matrix with a high intensity lacking neighbours are defined as independent clusters. Resulting clusters of the HDBSCAN approach can be summarized by either constructing a consensus sequence of reads belonging to a cluster (higher demand) or by extracting a reference sequence from the 45SN1 of hg38 by using the minimal start point and the maximal end point of the cluster. (lower demand)  
 
 # Poly-A estimation
 NanoRibolyzer is determining the polyA lengths with the integrated polyA length estimation tool of dorado. Due to the experimental design of the Oxford Nanopore Technologies related sequencing library, polyA tails can only be captured in the entire length when performing directRNA sequencing approaches, since these protocols exclusively include a ligation of oligo_dT primers at the 3'end of RNA fragments. NanoRibolyzer performs polyA estimation on cDNA as well, but it is crucial to consider the oligo_dT primers aligning on any sterical possible position of polyA tail. 
@@ -158,6 +158,40 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 │
 └── rRNA_report.html                            # HTML report including all plots decribed above. Will be automatically integrated in Epi2Me.
 ```
+
+NanoRibolyzer provides a variety of default output plots, which will be presented in the subsequent section. However, it also allows for downstream data analysis, linking different properties of reads like polyA taillength, modification ratios and  cluster size via read id. In the following we are showing a collection of plots that are directly accessible when using NanoRibolyzer. For a whole collection of accesible plots, please open this [html]("./figures/rRNA_report.html") file.  
+
+# Coverage Plots
+NanoRibolyzer aligns reads to the 45SN1 template of hg38. It shows the overall coverage of the whole reference. 
+![45SN1 coverage](./figures/coverage_total_sample_absolute.png)
+
+The read coverage of different literature based fragments during ribosomal biogenesis is shown, which allows the assesment of the read association performance. 
+![Template based coverage](./figures/coverage_fragments_absolute.png)
+
+
+# Intensity Matrix and clustering
+
+Aligned reads become collected in an 2 dimensional intensity matrix, which is constructed by (start site, end site) pairs. The intensity of a coordiante in the matrix is determined by the min max normalized read abundance. The contrast of the normalized values is leveraged by an addition of 1% to each datapoint > 0. The absolute abundance of reads can be found in the instensity_matrix output folder. 
+
+![Intensity Matrix](".figures/intensity_matrix.png")
+
+Template free clustering approaches are performed using the creates matrix as input. 
+An intensity based approach extracts (start site, end site) datapoints with maximal abundance.  
+![Highest intensity Matrix]("./figures/highest_intensity_matrix.png")
+
+A density based approach [HDBSCAN]("https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html") uses the information of neighbourhood to find template free read clusters. 
+![HDBSCAN intensity Matrix]("./figures/hdbscan_intensity_matrix.png")
+
+
+# PolyA taillength prediction
+
+For each reference based template the distribution of polyA taillengths is shown as a violinplot. For the template free clusters with the highest abundance the violinplot is provided in a similar manner. 
+![Violinplot](./figures/coverage_fragments_absolute.png)
+
+# Modification ratio
+NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38. Please have a look at the followinf [html]("./figures/rRNA_report.html") file. 
+
+
 
 ## Software
 All basecalling processes are using the latest dorado docker environment ("ontresearch/dorado:latest") of ONT (Oxford Nanopore Technologies). 
