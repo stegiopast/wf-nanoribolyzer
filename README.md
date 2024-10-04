@@ -96,6 +96,7 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 │   ├── template_driven.bed                     # Bed file visualizing fragment abundance in igv
 │   ├── most_abundant_template_driven.bed       # Bed file visualizing fragment abundance in igv. Only fragments carrying more than mean * 2.stdd reads.
 │   └── template_driven_analysis.bed            # Log file of tmeplate_based_analysis script
+│
 ├── fragment_hdbscan_analysis                   # Outputs of template free clustering approaches. Same structure is given for fragment_intensity_analysis. 
 │   ├── alignment_df.csv                        # List of aligned reads with aligned sequences reconstructed by cigarstrings, includes start and end sites on the reference
 │   ├── fragment_df.csv                         # For each fragment being determined by template free association a consensus sequence, proportional sequence, read ids, absolute and relative number of reads are provided
