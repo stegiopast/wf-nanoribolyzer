@@ -162,7 +162,7 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 ## Software
 All basecalling processes are using the latest dorado docker environment ("ontresearch/dorado:latest") of ONT (Oxford Nanopore Technologies). 
 For the publication of our data we used the newest models provided with dorado version 0.7.2 in May 2024.
-If you want to use our specific dorado version you can pull a specific docker environment from [docker hub]("https://hub.docker.com/r/ontresearch/dorado/tags"). -> ("ontresearch/dorado:sha58b978562389bd0f1842601fb83cdf1eb2920218") 
+If you want to use our specific dorado version you can pull a specific docker environment from [docker hub]("https://hub.docker.com/r/ontresearch/dorado/tags"). ("ontresearch/dorado:sha58b978562389bd0f1842601fb83cdf1eb2920218") 
 Please be aware that you need to specify this version in the nextflow.config file by replacing ontresearch/dorado:latest at line 68 (container = "ontresearch/dorado"). 
 You can do so for all versions of dorado, by finding the right tag at [docker hub]("https://hub.docker.com/r/ontresearch/dorado/tags").
 All other processes use a docker environment we built for this project. Teh versions of the environment can be found in the docker_images/other_tools folder of this repository. 
