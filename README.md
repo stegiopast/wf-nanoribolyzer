@@ -37,13 +37,13 @@ The reference-based algorithm performs an association of sequenced reads to lite
 The reference-free algorithms are based on a preceding intensity matrix construction. Read ids become embedded in a 45SN1 length x 45SN1 length matrix by using their start and end points of the alignment as coordinates. The intensity of a coordinate in the matrix is determined by the number of reads aligning to it. 
 
 1. In the first clustering approach all reads sharing a start and end site are interpreted as a read cluster. The approach is most performant with reads not underlying degradation processes. 
-2. The second approach is using a hierarchical density-based clustering approach with alternating neighbourhood ([HDBSCAN]("https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html") to cluster reads sharing similar start and end sites in the intensity matrix. HDBSCAN determines clusters of high intensity read groups having several neighbouring read groups in the intensity matrix. Coordinates on the intensity matrix with a high intensity lacking neighbours are defined as independent clusters. Resulting clusters of the HDBSCAN approach can be summarized by either constructing a consensus sequence of reads belonging to a cluster (higher demand) or by extracting a reference sequence from the 45SN1 of hg38 by using the minimal start point and the maximal end point of the cluster. (lower demand)  
+2. The second approach is using a hierarchical density-based clustering approach with alternating neighbourhood ([HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) to cluster reads sharing similar start and end sites in the intensity matrix. HDBSCAN determines clusters of high intensity read groups having several neighbouring read groups in the intensity matrix. Coordinates on the intensity matrix with a high intensity lacking neighbours are defined as independent clusters. Resulting clusters of the HDBSCAN approach can be summarized by either constructing a consensus sequence of reads belonging to a cluster (higher demand) or by extracting a reference sequence from the 45SN1 of hg38 by using the minimal start point and the maximal end point of the cluster. (lower demand)  
 
 # Poly-A estimation
-NanoRibolyzer is determining the polyA lengths with the integrated polyA length estimation tool of dorado. Due to the experimental design of the Oxford Nanopore Technologies related sequencing library, polyA tails can only be captured in the entire length when performing directRNA sequencing approaches, since these protocols exclusively include a ligation of oligo_dT primers at the 3'end of RNA fragments. NanoRibolyzer performs polyA estimation on cDNA as well, but it is crucial to consider the oligo_dT primers aligning on any sterical possible position of polyA tail. 
+NanoRibolyzer is determining the polyA lengths with the integrated polyA length estimation tool of [dorado](https://github.com/nanoporetech/dorado). Due to the experimental design of the Oxford Nanopore Technologies related sequencing library, polyA tails can only be captured in the entire length when performing directRNA sequencing approaches, since these protocols exclusively include a ligation of oligo_dT primers at the 3'end of RNA fragments. NanoRibolyzer performs polyA estimation on cDNA as well, but it is crucial to consider the oligo_dT primers aligning on any sterical possible position of polyA tail. 
 
 # Modification detection
-Modification detection is performed with the integrated modification detection models of dorado. Modifications can only be detected when performing directRNA sequencing approaches, since reverse transcription and strand switching to obtain cDNA erases the chemical signature of RNA modifications.    
+Modification detection is performed with the integrated modification detection models of [dorado](https://github.com/nanoporetech/dorado). Modifications can only be detected when performing directRNA sequencing approaches, since reverse transcription and strand switching to obtain cDNA erases the chemical signature of RNA modifications.    
 
 # Cut-site determination
 
@@ -199,7 +199,7 @@ NanRibolyzer uses dorado based models to asses modification frequencies on the 4
 For many plots shown here an interactive html based figure will be provided by the output of NanoRibolyzer. Please download the example [html](./figures/rRNA_report.html) file and open it in a browser of your choice. The presented output is integrated in Epi2Me and will be directly accessible on the plattform. 
 
 ## Software
-All basecalling processes are using the latest dorado docker environment ("ontresearch/dorado:latest") of ONT (Oxford Nanopore Technologies). 
+All basecalling processes are using the latest dorado [docker environment](https://hub.docker.com/r/ontresearch/dorado/tags) ("ontresearch/dorado:latest") of ONT (Oxford Nanopore Technologies). 
 For the publication of our data we used the newest models provided with dorado version 0.7.2 in May 2024.
 
 If you want to use our specific dorado version you can pull a specific docker environment from [docker hub](https://hub.docker.com/r/ontresearch/dorado/tags). 
@@ -207,7 +207,7 @@ If you want to use our specific dorado version you can pull a specific docker en
 
 Please be aware that you need to specify this version in the nextflow.config file by replacing ontresearch/dorado:latest at line 68. (container = "ontresearch/dorado") 
 You can do so for all versions of dorado, by finding the right tag at [docker hub](https://hub.docker.com/r/ontresearch/dorado/tags).
-All other processes use a docker environment we built for this project. Teh versions of the environment can be found in the docker_images/other_tools folder of this repository. 
+All other processes use a docker environment we built for this project. The versions of the environment can be found in the docker_images/other_tools folder of this repository. 
 
 ## References
 
