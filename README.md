@@ -186,7 +186,7 @@ A density based approach [HDBSCAN]("https://scikit-learn.org/1.5/modules/generat
 # PolyA taillength prediction
 
 For each reference based template the distribution of polyA taillengths is shown as a violinplot. For the template free clusters with the highest abundance the violinplot is provided in a similar manner. 
-![Violinplot](./figures/coverage_fragments_absolute.png)
+![Violinplot]("./figures/violinplot_taillength_per_intermediate.png")
 
 # Modification ratio
 NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38. Please have a look at the followinf [html]("./figures/rRNA_report.html") file. 
