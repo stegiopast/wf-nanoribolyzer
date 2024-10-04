@@ -163,10 +163,10 @@ NanoRibolyzer provides a variety of default output plots, which will be presente
 
 # Coverage Plots
 NanoRibolyzer aligns reads to the 45SN1 template of hg38. It shows the overall coverage of the whole reference. 
-![45SN1 coverage](./figures/coverage_total_sample_absolute.png)
+![45SN1 coverage]("./figures/coverage_total_sample_absolute.png")
 
 The read coverage of different literature based fragments during ribosomal biogenesis is shown, which allows the assesment of the read association performance. 
-![Template based coverage](./figures/coverage_fragments_absolute.png)
+![Template based coverage]("./figures/coverage_fragments_absolute.png")
 
 
 # Intensity Matrix and clustering
