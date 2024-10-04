@@ -179,7 +179,7 @@ Template free clustering approaches are performed using the creates matrix as in
 An intensity based approach extracts (start site, end site) datapoints with maximal abundance.  
 ![Highest intensity Matrix](./figures/highest_intensity_matrix.png)
 
-A density based approach [HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) uses the information of neighbourhood to find template free read clusters. 
+A density based approach [HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) uses the information of neighbourhood to find template free read clusters. The upper left corner of the red boxes determine the (start site,end site) pair of determined clusters. 
 ![HDBSCAN intensity Matrix](./figures/hdbscan_intensity_matrix.png)
 
 
@@ -189,7 +189,7 @@ For each reference based template the distribution of polyA taillengths is shown
 ![Violinplot](./figures/violinplot_taillength_per_intermediate.png)
 
 # Modification ratio
-NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38. Please have a look at the followinf [html](./figures/rRNA_report.html) file. 
+NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38. Please have a look at the following [html](./figures/rRNA_report.html) file. 
 
 
 
