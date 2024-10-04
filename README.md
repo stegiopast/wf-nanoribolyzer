@@ -1,6 +1,5 @@
 # NanoRibolyzer
-
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) ![GitHub Release](https://img.shields.io/github/v/release/dietvin/pod5Viewer) ![PyPI - Version](https://img.shields.io/pypi/v/pod5Viewer) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/dietvin/pod5Viewer/total)
+![GitHub Release](https://img.shields.io/github/v/release/stegiopast/wf-nanoribolyzer) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/stegiopast/wf-nanoribolyzer/total)
 
 ## Abstract
 NanoRibolyzer is an Epi2Me compatible tool to analyse ribosomal RNA biogenesis pathway at single nucleotide resolution. 
