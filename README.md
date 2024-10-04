@@ -159,37 +159,37 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 └── rRNA_report.html                            # HTML report including all plots decribed above. Will be automatically integrated in Epi2Me.
 ```
 
-NanoRibolyzer provides a variety of default output plots, which will be presented in the subsequent section. However, it also allows for downstream data analysis, linking different properties of reads like polyA taillength, modification ratios and  cluster size via read id. In the following we are showing a collection of plots that are directly accessible when using NanoRibolyzer. For a whole collection of accesible plots, please open this [html]("./figures/rRNA_report.html") file.  
+NanoRibolyzer provides a variety of default output plots, which will be presented in the subsequent section. However, it also allows for downstream data analysis, linking different properties of reads like polyA taillength, modification ratios and  cluster size via read id. In the following we are showing a collection of plots that are directly accessible when using NanoRibolyzer. For a whole collection of accesible plots, please open this [html](./figures/rRNA_report.html) file.  
 
 # Coverage Plots
 NanoRibolyzer aligns reads to the 45SN1 template of hg38. It shows the overall coverage of the whole reference. 
-![45SN1 coverage]("./figures/coverage_total_sample_absolute.png")
+![45SN1 coverage](./figures/coverage_total_sample_absolute.png)
 
 The read coverage of different literature based fragments during ribosomal biogenesis is shown, which allows the assesment of the read association performance. 
-![Template based coverage]("./figures/coverage_fragments_absolute.png")
+![Template based coverage](./figures/coverage_fragments_absolute.png)
 
 
 # Intensity Matrix and clustering
 
 Aligned reads become collected in an 2 dimensional intensity matrix, which is constructed by (start site, end site) pairs. The intensity of a coordiante in the matrix is determined by the min max normalized read abundance. The contrast of the normalized values is leveraged by an addition of 1% to each datapoint > 0. The absolute abundance of reads can be found in the instensity_matrix output folder. 
 
-![Intensity Matrix](".figures/intensity_matrix.png")
+![Intensity Matrix](.figures/intensity_matrix.png)
 
 Template free clustering approaches are performed using the creates matrix as input. 
 An intensity based approach extracts (start site, end site) datapoints with maximal abundance.  
-![Highest intensity Matrix]("./figures/highest_intensity_matrix.png")
+![Highest intensity Matrix](./figures/highest_intensity_matrix.png)
 
-A density based approach [HDBSCAN]("https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html") uses the information of neighbourhood to find template free read clusters. 
-![HDBSCAN intensity Matrix]("./figures/hdbscan_intensity_matrix.png")
+A density based approach [HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) uses the information of neighbourhood to find template free read clusters. 
+![HDBSCAN intensity Matrix](./figures/hdbscan_intensity_matrix.png)
 
 
 # PolyA taillength prediction
 
 For each reference based template the distribution of polyA taillengths is shown as a violinplot. For the template free clusters with the highest abundance the violinplot is provided in a similar manner. 
-![Violinplot]("./figures/violinplot_taillength_per_intermediate.png")
+![Violinplot](./figures/violinplot_taillength_per_intermediate.png)
 
 # Modification ratio
-NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38. Please have a look at the followinf [html]("./figures/rRNA_report.html") file. 
+NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38. Please have a look at the followinf [html](./figures/rRNA_report.html) file. 
 
 
 
@@ -197,11 +197,11 @@ NanRibolyzer uses dorado based models to asses modification frequencies on the 4
 All basecalling processes are using the latest dorado docker environment ("ontresearch/dorado:latest") of ONT (Oxford Nanopore Technologies). 
 For the publication of our data we used the newest models provided with dorado version 0.7.2 in May 2024.
 
-If you want to use our specific dorado version you can pull a specific docker environment from [docker hub]("https://hub.docker.com/r/ontresearch/dorado/tags"). 
+If you want to use our specific dorado version you can pull a specific docker environment from [docker hub](https://hub.docker.com/r/ontresearch/dorado/tags). 
 ("ontresearch/dorado:sha58b978562389bd0f1842601fb83cdf1eb2920218") 
 
 Please be aware that you need to specify this version in the nextflow.config file by replacing ontresearch/dorado:latest at line 68. (container = "ontresearch/dorado") 
-You can do so for all versions of dorado, by finding the right tag at [docker hub]("https://hub.docker.com/r/ontresearch/dorado/tags").
+You can do so for all versions of dorado, by finding the right tag at [docker hub](https://hub.docker.com/r/ontresearch/dorado/tags).
 All other processes use a docker environment we built for this project. Teh versions of the environment can be found in the docker_images/other_tools folder of this repository. 
 
 ## References
