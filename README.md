@@ -191,9 +191,12 @@ For each reference based template the distribution of polyA taillengths is shown
 ![Violinplot](./figures/violinplot_taillength_per_intermediate.png)
 
 # Modification ratio
-NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38. Please have a look at the following [html](./figures/rRNA_report.html) file. 
+NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38.
 
+![Modification plot](./figures/relative_PseU_abundance.png)
 
+# Interactive plots
+For many plots shown here an interactive html based figure will be provided by the output of NanoRibolyzer. Please download the example [html](./figures/rRNA_report.html) file and open it in a browser of your choice. The presented output is integrated in Epi2Me and will be directly accessible on the plattform. 
 
 ## Software
 All basecalling processes are using the latest dorado docker environment ("ontresearch/dorado:latest") of ONT (Oxford Nanopore Technologies). 
