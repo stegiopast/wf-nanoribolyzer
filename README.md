@@ -157,7 +157,7 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 │   └── cut_sites.html                          # Cut sites determined by fragment based threshold cut site determination of template based analysis. Normalized to the number of all reads in the sample.
 │
 └── rRNA_report.html                            # HTML report including all plots decribed above. Will be automatically integrated in Epi2Me.
-
+```
 
 ## References
 
