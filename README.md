@@ -173,7 +173,7 @@ The read coverage of different literature based fragments during ribosomal bioge
 
 Aligned reads become collected in an 2 dimensional intensity matrix, which is constructed by (start site, end site) pairs. The intensity of a coordiante in the matrix is determined by the min max normalized read abundance. The contrast of the normalized values is leveraged by an addition of 1% to each datapoint > 0. The absolute abundance of reads can be found in the instensity_matrix output folder. 
 
-![Intensity Matrix](.figures/intensity_matrix.png)
+![Intensity Matrix](./figures/intensity_matrix.png)
 
 Template free clustering approaches are performed using the creates matrix as input. 
 An intensity based approach extracts (start site, end site) datapoints with maximal abundance.  
