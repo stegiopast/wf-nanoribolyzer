@@ -177,9 +177,11 @@ Aligned reads become collected in an 2 dimensional intensity matrix, which is co
 
 Template free clustering approaches are performed using the creates matrix as input. 
 An intensity based approach extracts (start site, end site) datapoints with maximal abundance.  
+The upper left corner of the red boxes determine the (start site,end site) pair of determined clusters. 
 ![Highest intensity Matrix](./figures/highest_intensity_matrix.png)
 
-A density based approach [HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) uses the information of neighbourhood to find template free read clusters. The upper left corner of the red boxes determine the (start site,end site) pair of determined clusters. 
+A density based approach [HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) uses the information of neighbourhood to find template free read clusters. 
+The upper left corner of the red boxes determine the (start site,end site) pair of determined clusters. 
 ![HDBSCAN intensity Matrix](./figures/hdbscan_intensity_matrix.png)
 
 
