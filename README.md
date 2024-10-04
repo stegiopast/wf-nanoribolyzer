@@ -73,17 +73,21 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 │   ├── filtered.bam.bai                        # Index for above
 │   ├── filtered.fastq.gz                       # Converted fastq file of filtered.bam 
 │   └── sequencing_summary.txt                  # Summary fuile of dorado basecalling
+│
 ├── converted_to_pod5                           # If original seqeuncing files were written in fast5 format they become converted into pod5 first and will be stored in this directory
-│   └── converted.pod5                          # File is written only if original sequencing file was in fast5 format     
+│   └── converted.pod5                          # File is written only if original sequencing file was in fast5 format
+│
 ├── filtered_pod5
 │   ├── filtered.pod5                           # Pod5 file with files aligning to 45SN1 of hg38
 │   ├── filtered_pod5_basecalled.bam            # 45SN1 aligned basecalling output of dorado from filtered.pod5 untrimmed. This file includes move table (all) and modification tags (directRNA). 
 │   ├── filtered_pod5_basecalled.bam.bai        # Index for above
 │   └── sorted_filtered_reads.txt               # List with read_ids aligning 45SN1 of hg38
+│
 ├── intensity_matrix                            # Folder contains 
 │   ├── intensity_matrix.csv                    # Table with read ids and number of reads aligning to (start site, end site) pairs  
 │   ├── intensity_matrix.html                   # Interactive html file with 50000 most abundant (start site, end site) pairs
 │   └── intensity_matrix.png                    # An image of the intensity matrix used for the clustering approach
+│
 ├── template_based_analysis
 │   ├── template_alignment_df.csv               # List of single aligned reads with aligned sequences reconstructed by cigarstrings, includes start and end sites on the reference. The percentage of overlap with associated fragment is listed. 
 │   ├── template_fragment_df.csv                # List with read_ids being associated to fragments from literature. Table stores the extracted sequence of the literature fragment and the start and end site on 45SN1.  
@@ -95,7 +99,7 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 │   ├── end_sites_fragment_based.bed            # Bed file for visualization of fragment based end sites in IGV
 │   ├── template_driven.bed                     # Bed file visualizing fragment abundance in igv
 │   ├── most_abundant_template_driven.bed       # Bed file visualizing fragment abundance in igv. Only fragments carrying more than mean * 2.stdd reads.
-│   └── template_driven_analysis.bed            # Log file of tmeplate_based_analysis script
+│   └── template_driven_analysis.bed            # Log file of template_based_analysis script
 │
 ├── fragment_hdbscan_analysis                   # Outputs of template free clustering approaches. Same structure is given for fragment_intensity_analysis. 
 │   ├── alignment_df.csv                        # List of aligned reads with aligned sequences reconstructed by cigarstrings, includes start and end sites on the reference
@@ -107,6 +111,7 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 │   ├── top_150_no_template.bed                 # Top 150 Fragments found with template free clustering carrying most of the reads
 │   ├── intensity_matrix.png                    # Intensity matrix used for the clustering approach with 300 clusters carrying the most reads. Clusters are shown as red rectangles of which the upper left corner represents common (start,end) sites. 
 │   └── fragment_analysis.log                   # Log file of fragment_hdbscan_analysis script
+│
 
 
 ## References
