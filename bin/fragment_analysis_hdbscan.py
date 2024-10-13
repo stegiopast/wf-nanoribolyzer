@@ -248,8 +248,8 @@ def create_intensity_matrix(fusion_alignment_df: pl.DataFrame):
     """
     intensity_matrix = np.zeros(
         (
-            max(fusion_alignment_df["Refend"]) + 1,
-            max(fusion_alignment_df["Refend"]) + 1,
+            max(fusion_alignment_df["Refend"]) + 2,
+            max(fusion_alignment_df["Refend"]) + 2,
         ),
         dtype=int,
     )
