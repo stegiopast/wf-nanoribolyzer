@@ -143,14 +143,14 @@
     },
     "resources": {
         "recommended": {
-            "cpus": 4,
+            "cpus": 32,
             "memory": "128GB"
         },
         "minimum": {
-            "cpus": 4,
+            "cpus": 16,
             "memory": "64GB"
         },
-        "run_time": "~10 hours per sample",
+        "run_time": "~10 hours per sample, highly dependent on dataset size",
         "arm_support": true 
     }
 }
