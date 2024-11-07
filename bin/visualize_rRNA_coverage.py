@@ -13,6 +13,21 @@ import plotly.graph_objects as go
 import plotly
 import pysam
 
+# Uses alignment dataframe obtained from template-free analysis
+# and plots coverage of rRNA on a global scale 
+# and per literature based intermediate
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                    Argument parser                                                                #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
+
 # Argument Parser
 opt_parser = argparse.ArgumentParser()
 
@@ -64,6 +79,19 @@ output = options.output
 fragment_df_path = options.fragment_df_path
 color_sample = options.color_sample
 reference_path = options.reference
+
+
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                            Script                                                                 #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
 
 color_dict = {}
 for sample, color in zip(

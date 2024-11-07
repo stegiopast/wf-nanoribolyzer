@@ -15,6 +15,23 @@ import pysam
 from tqdm import tqdm
 import os
 
+
+#Takes bamfiles and extracts reads with
+#big deletion gaps. A lineplot with matplotlib
+# is created with plotly.
+
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                    Argument parser                                                                #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
+
 # Argument Parser
 opt_parser = argparse.ArgumentParser()
 
@@ -49,8 +66,47 @@ output = options.output
 reference_path = options.reference
 
 
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                          Functions                                                                #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
+
+
 
 def plot_reads_with_deletions(bamfile_name: str, minimal_deletion_size: int, length_of_reference: int):
+    """
+    Analyzes and visualizes read coverage and deletion coverage from a BAM file.
+
+    This function processes a BAM file to extract reads containing deletions of a specified minimum size.
+    It counts the number of reads aligned in forward and reverse directions, calculates the coverage
+    across the reference sequence both with and without deletions, and plots the results.
+
+    Args:
+        bamfile_name (str): The name of the BAM file to process.
+        minimal_deletion_size (int): The minimum deletion size (in bases) to include in the deletion analysis.
+        length_of_reference (int): The total length of the reference sequence.
+
+    Returns:
+        None: The function displays a plot comparing coverage with and without deletions, where:
+              - The blue line shows coverage without deletions.
+              - The red line shows coverage where deletions are counted.
+
+    Side Effects:
+        - Writes a BAM file (`deletions.bam`) containing only the reads with deletions of the specified size or larger.
+        - Indexes this BAM file using `samtools`.
+        - Plots and displays a comparison of coverage with and without deletions.
+
+    Notes:
+        - This function requires the `pysam`, `numpy`, `matplotlib`, and `tqdm` libraries.
+        - Ensure `samtools` is installed and available in the system path for BAM file indexing.
+
+    """
     counter_forward = 0
     counter_reverse = 0
     
@@ -114,14 +170,7 @@ def plot_reads_with_deletions(bamfile_name: str, minimal_deletion_size: int, len
                 coverage_counter_list_deletions[position] += 1
             coverage_counter_list_without_deletions[position] += 1
     
-    print(coverage_counter_list)
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(10, 10))
-    # ax.plot(
-    #     coverage_index_list,
-    #     coverage_counter_list,
-    #     color="black",
-    #     linewidth=2,
-    # )
     ax.plot(
         coverage_index_list,
         coverage_counter_list_without_deletions,
@@ -142,7 +191,16 @@ def plot_reads_with_deletions(bamfile_name: str, minimal_deletion_size: int, len
 
                 
 
-                    
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                          Script                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################                   
 
 
 

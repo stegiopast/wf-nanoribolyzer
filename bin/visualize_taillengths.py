@@ -10,6 +10,22 @@ import plotly.graph_objects as go
 import plotly
 import pysam
 
+# Takes output of taillength estimation
+# and plots polyA taillength deviation on different 
+# template-based algorithm associated rRNA intermediates.
+# Horizontal barplots and violinplots are generated.
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                    Argument parser                                                                #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
+
 opt_parser = argparse.ArgumentParser()
 
 opt_parser.add_argument(
@@ -64,6 +80,18 @@ reference_path = options.reference
 output_path = options.output_path
 color_sample = options.color_sample
 fragment_df_path = options.fragment_df_path
+
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                           Script                                                                  #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
 
 fasta_file = pysam.FastaFile(reference_path)
 reference = fasta_file.references[0]
@@ -372,7 +400,6 @@ for index, row in fragment_df_plot.iterrows():
         font=dict(size=12),
     )
 
-#plotly.offline.plot(fig, filename=f"{output_path}/polyA_tails_intermediates_min_max.html")
 plotly.io.write_html(fig, f"{output_path}/polyA_tails_intermediates_min_max.html")
 
 joined_df_summary = joined_df_short.groupby(
@@ -522,7 +549,6 @@ for index, row in fragment_df_plot.iterrows():
         font=dict(size=12),
     )
 
-#plotly.offline.plot(fig, filename=f"{output_path}/polyA_tails_intermediates_mean.html")
 plotly.io.write_html(fig, f"{output_path}/polyA_tails_intermediates_mean.html")
 
 
@@ -665,5 +691,4 @@ for index, row in fragment_df_plot.iterrows():
         font=dict(size=12),
     )
 
-#plotly.offline.plot(fig, filename=f"{output_path}/polyA_tails_intermediates_template.html")
 plotly.io.write_html(fig, f"{output_path}/polyA_tails_intermediates_template.html")

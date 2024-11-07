@@ -24,6 +24,7 @@ opt_parser.add_argument(
     metavar="FILE",
 )
 
+#Set variables
 options = opt_parser.parse_args()
 bamfile_name = options.bamfile_name
 output_dir = options.output_dir_name

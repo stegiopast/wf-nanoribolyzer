@@ -11,7 +11,22 @@ import plotly
 import argparse
 from random import seed,uniform
 
+# Takes bam file products of dorado when running it
+# with modification detection flags.
+# Extracts modification ratios. 
+# Visualization of detected modifications as lineplot. 
+# Works only on directRNA samples.
 
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                    Argument parser                                                                #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
 
 opt_parser = argparse.ArgumentParser()
 
@@ -54,6 +69,18 @@ bamfile_path = options.bamfile_name#"/home/stefan/analysis_modifications_dRNA/IV
 reference_path = options.reference
 literature_mod_df_path = options.modification_list
 output_path = options.output_path
+
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                            Script                                                                 #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
 
 literature_mod_df = pd.read_csv(literature_mod_df_path ,sep="\t",header=None,index_col=None) #"/home/stefan/wf-nanoribolyzer/references/rRNA_modifications_conv.bed"
 literature_mod_df.columns = ["reference","start","end","modification","A","B","C"]
@@ -212,7 +239,6 @@ fig.update_layout(
     plot_bgcolor='rgba(0,0,0,0)',
 )
 
-#plotly.offline.plot(fig, filename=f"{output_path}/relative_pseU_modification_abundance.html")
 plotly.io.write_html(fig, f"{output_path}/relative_pseU_modification_abundance.html")
 
 layout = go.Layout(height = 800)
@@ -268,5 +294,4 @@ fig2.update_layout(
     plot_bgcolor='rgba(0,0,0,0)'
 )
 
-#plotly.offline.plot(fig2, filename=f"{output_path}/relative_m6A_modification_abundance.html")
 plotly.io.write_html(fig2, f"{output_path}/relative_m6A_modification_abundance.html")

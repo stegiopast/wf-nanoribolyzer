@@ -10,6 +10,22 @@ import plotly.graph_objects as go
 import plotly
 import pysam
 
+# Takes output of taillength estimation
+# and plots polyA taillength deviation on different  
+# template-free clustered read groups.
+# Horizontal barplots and violinplots are generated.
+
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                    Argument parser                                                                #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
 
 opt_parser = argparse.ArgumentParser()
 
@@ -68,6 +84,18 @@ output_path = options.output_path
 color_sample = options.color_sample
 reference_path = options.reference
 fragment_df_path = options.fragment_df_path
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                           Script                                                                  #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
+
 
 
 fasta_file = pysam.FastaFile(reference_path)
@@ -408,5 +436,4 @@ for index, row in fragment_df.iterrows():
         font=dict(size=12),
     )
 
-#plotly.offline.plot(fig, filename=f"{output_path}/polyA_tails_clustering.html")
 plotly.io.write_html(fig, f"{output_path}/polyA_tails_clustering.html")

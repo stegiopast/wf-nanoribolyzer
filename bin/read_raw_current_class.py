@@ -16,20 +16,46 @@ import polars as pl
 import h5py
 import os
 
-"""
-Bascalling and alignment should have been executed with the following flags in order for this script to function
 
-dorado basecaller ~/dorado-0.4.3-linux-x64/bin/rna002_70bps_hac@v3 extraction_final.pod5 --emit-moves |\
-      ~/samtools-1.18/bin/samtools fastq -T "*" | minimap2 -y --MD -ax map-ont Gm_randomers.fasta - |\
-      ~/samtools-1.18/bin/samtools view -b -F 4 > extraction_final.bam
+# Bascalling and alignment should have been executed with the following flags in order for this script to function
+#
+# dorado basecaller ~/dorado-0.4.3-linux-x64/bin/rna002_70bps_hac@v3 extraction_final.pod5 --emit-moves |\
+#       ~/samtools-1.18/bin/samtools fastq -T "*" | minimap2 -y --MD -ax map-ont Gm_randomers.fasta - |\
+#       ~/samtools-1.18/bin/samtools view -b -F 4 > extraction_final.bam
+#
+# Move table and MD tags must be integrated in the final bam file
 
-Move table and MD tags must be integrated in the final bam file
-"""
 
-"""
-Creates an object of a single read in a pod5 dataset, providing direct access to resquiggleing data performed with ONT's remora tool. 
-"""
 class RawCurrentReadDataset:
+    """
+    A class to initialize and process signal data from POD5 and BAM files, supporting both basecall and reference-anchored analysis.
+
+    Attributes:
+    ----------
+    id : str
+        The read ID used to identify and load the data.
+    pod5_read : optional
+        Single read from a POD5 dataset (default is None).
+    pod5_dr : pod5.dataset.DatasetReader
+        DatasetReader object to access POD5 data (default is None).
+    pod5_filename : Path
+        Path to the POD5 file.
+    bam_read : optional
+        Single read alignment from a BAM file (default is None).
+    bam_fh : remora.io.ReadIndexedBam
+        BAM file handler used to read the alignment.
+    bam_filename : Path
+        Path to the BAM file.
+    kmer_table : Path
+        Path to the k-mer model file used for refining signal mapping.
+    sig_map_refiner : optional
+        Signal mapping refiner to map signals to k-mers (default is None).
+
+    Methods:
+    -------
+    __init__()
+        Initializes the dataset by loading POD5 and BAM data, processing both basecall-anchored and reference-anchored signals.
+    """
     def __init__(
         self,
         id: str = "",
@@ -42,6 +68,38 @@ class RawCurrentReadDataset:
         kmer_table: Path = "",
         sig_map_refiner=None,
     ):
+        """
+        Initializes a RawCurrentReadDataset object by loading POD5 and BAM data,
+        as well as basecall-anchored and reference-anchored signal information.
+
+        Parameters:
+        ----------
+        id : str
+            The read ID for identifying the read in the POD5 and BAM files.
+        pod5_read : optional
+            Single read from POD5 dataset, if available.
+        pod5_dr : pod5.dataset.DatasetReader
+            DatasetReader object to access POD5 data.
+        pod5_filename : Path
+            Path to the POD5 file.
+        bam_read : optional
+            Single read alignment from BAM file, if available.
+        bam_fh : remora.io.ReadIndexedBam
+            BAM file handler to read alignment data.
+        bam_filename : Path
+            Path to the BAM file.
+        kmer_table : Path
+            Path to the k-mer model file used for refining signal mapping.
+        sig_map_refiner : optional
+            Signal mapping refiner to map signals to k-mers.
+
+        Raises:
+        ------
+        AttributeError
+            If an attribute is missing or fails to initialize.
+        remora.RemoraError
+            If Remora-specific errors occur.
+        """
         try:
             self.id = id
             self.kmer_table = kmer_table
@@ -171,16 +229,40 @@ class RawCurrentReadDataset:
         except remora.RemoraError:
             pass
 
-    """
-    Iterate over resquiggled data and
-    reconstruct the raw_current at a given coordinate +/-
-    upstream and downstream bases
-    Also extract the mean signal for each squiggle
-    """
 
     def extract_signal_reference_coordinates(
         self, coordinate: int = 0, bases_upstream: int = 4, bases_downstream: int = 4
     ):
+        """
+        Extracts signal data from a specified coordinate within a reference sequence, 
+        including a defined number of bases upstream and downstream from the coordinate.
+
+        Parameters:
+        ----------
+        coordinate : int
+            The specific coordinate within the reference sequence from which to extract data (default is 0).
+        bases_upstream : int
+            Number of bases upstream from the coordinate to include in the extracted region (default is 4).
+        bases_downstream : int
+            Number of bases downstream from the coordinate to include in the extracted region (default is 4).
+
+        Returns:
+        -------
+        tuple
+            A tuple containing:
+                - extracted_motif: Sequence segment surrounding the coordinate, including upstream and downstream bases.
+                - extracted_signal: List of measurements from the resquiggled signal in the extracted region.
+                - extracted_signal_means: Mean signal values in the extracted region.
+                - extracted_signal_trimmeans: Trimmed mean signal values in the extracted region.
+                - extracted_signal_dwell: Dwell time data in the extracted region.
+
+            If an error occurs during extraction, returns a tuple of None values.
+
+        Raises:
+        ------
+        KeyError, AttributeError, IndexError
+            In case of missing data attributes or out-of-bounds coordinates.
+        """
         try:
             extracted_motif = self.reference_sequence[
                 self.index_ref_dict[coordinate]
@@ -220,14 +302,6 @@ class RawCurrentReadDataset:
         except:
             return None, None, None, None, None
 
-    """
-    In 'first' only the first occurence of the motif in the reference is extracted
-    In 'all' all the occurences of the motif in the reference are extracted
-    Signal is extracted from position of substring in the reference +/- up- and downstream bases buffer
-    The extracted motif will be returned
-    The signal will be returned as a list of raw current and as a list with means for each squiggle
-    """
-
     def extract_signal_reference_motif(
         self,
         motif: str = "AG",
@@ -235,6 +309,46 @@ class RawCurrentReadDataset:
         bases_upstream: int = 0,
         bases_downstream: int = 0,
     ):
+        """
+        Extracts signal data from a specified motif within a reference sequence.
+
+        Parameters:
+        ----------
+        motif : str
+            The motif sequence to search for within the reference sequence (default is "AG").
+        all_or_first : str
+            Determines whether to extract data from the "first" instance of the motif or from "all" instances (default is "all").
+        bases_upstream : int
+            Number of bases upstream from the motif to include in the extracted region (default is 0).
+        bases_downstream : int
+            Number of bases downstream from the motif to include in the extracted region (default is 0).
+
+        Returns:
+        -------
+        tuple
+            If `all_or_first` is "first":
+                - extracted_motif: The sequence containing the motif plus upstream and downstream bases.
+                - extracted_signal: List of measurements from the resquiggled signal within the extracted region.
+                - extracted_signal_means: Mean signal values in the extracted region.
+                - extracted_signal_trimmeans: Trimmed mean signal values in the extracted region.
+                - extracted_signal_dwells: Dwell time data in the extracted region.
+
+            If `all_or_first` is "all":
+                - extracted_motifs: List of sequences each containing one motif with surrounding upstream and downstream bases.
+                - extracted_signals: List of lists of resquiggled signal measurements for each extracted region.
+                - extracted_signals_means: List of mean signal values for each extracted region.
+                - extracted_signals_trimmeans: List of trimmed mean signal values for each extracted region.
+                - extracted_signals_dwells: List of dwell times for each extracted region.
+
+            If an error occurs or if lengths are inconsistent, returns a tuple of None values.
+
+        Raises:
+        ------
+        KeyError
+            If extraction from the reference motif fails due to a missing key in the data.
+        AttributeError
+            If extraction fails due to missing data attributes.
+        """
         try:
             if all_or_first == "first":
                 coordinate = self.reference_sequence.find(motif)
@@ -346,14 +460,6 @@ class RawCurrentReadDataset:
             # print("Extraction of signal from reference motif failed.\n")
             return None, None, None, None, None
 
-    """
-    In 'first' only the first occurence of the motif in the basecall sequence is extracted
-    In 'all' all the occurences of the motif in the basecall sequence are extracted
-    Signal is extracted from position of substring in the basecall +/- up- and downstream bases buffer
-    The extracted motif will be returned
-    The signal will be returned as a list of raw current and as a list with means for each squiggle
-    """
-
     def extract_signal_basecall_motif(
         self,
         motif: str = "AG",
@@ -361,6 +467,44 @@ class RawCurrentReadDataset:
         bases_upstream: int = 0,
         bases_downstream: int = 0,
     ):
+        """
+        Extracts signal data from a specified motif within a basecalled sequence.
+
+        Parameters:
+        ----------
+        motif : str
+            The motif sequence to search for within the basecall sequence (default is "AG").
+        all_or_first : str
+            Specifies whether to extract data from the "first" instance of the motif or from "all" instances (default is "all").
+        bases_upstream : int
+            Number of bases upstream from the motif to include in the extracted region (default is 0).
+        bases_downstream : int
+            Number of bases downstream from the motif to include in the extracted region (default is 0).
+
+        Returns:
+        -------
+        tuple
+            If `all_or_first` is "first":
+                - extracted_motif: The sequence containing the motif with upstream and downstream bases.
+                - extracted_signal: List of measurements from the resquiggled signal within the extracted region.
+                - extracted_signal_means: Mean signal values in the extracted region.
+                - extracted_signal_trimmeans: Trimmed mean signal values in the extracted region.
+                - extracted_signal_dwells: Dwell time data in the extracted region.
+
+            If `all_or_first` is "all":
+                - extracted_motifs: List of sequences each containing one motif with surrounding upstream and downstream bases.
+                - extracted_signals: List of lists of resquiggled signal measurements for each extracted region.
+                - extracted_signals_means: List of mean signal values for each extracted region.
+                - extracted_signals_trimmeans: List of trimmed mean signal values for each extracted region.
+                - extracted_signals_dwells: List of dwell times for each extracted region.
+
+            If an error occurs or if lengths are inconsistent, returns a tuple of None values.
+
+        Raises:
+        ------
+        KeyError, AttributeError
+            In case of missing data attributes or if extraction from the basecall motif fails.
+        """
         try:
             if all_or_first == "first":
                 coordinate = self.basecall_sequence.find(motif)
@@ -473,6 +617,39 @@ class RawCurrentReadDataset:
             return None, None, None, None, None
 
     def write_dataset(self, output_path: str):
+        """
+        Writes the dataset information to an HDF5 file.
+
+        Parameters:
+        ----------
+        output_path : str
+            The file path where the dataset will be written. If the file does not exist, it will be created.
+
+        Writes:
+        ------
+        HDF5 File
+            The dataset is stored in an HDF5 file with the following structure:
+                - Each read ID is a group containing the following datasets:
+                    - "read_id": The read ID.
+                    - "basecall_sequence": Sequence from the basecall data.
+                    - "basecall_mean": List of basecall mean values.
+                    - "basecall_sd": List of basecall standard deviation values.
+                    - "basecall_trimmean": List of trimmed mean values from the basecall.
+                    - "basecall_trimsd": List of trimmed standard deviation values from the basecall.
+                    - "basecall_dwell": List of basecall dwell times.
+                    - "reference_sequence": Sequence from the reference data.
+                    - "reference_mean": List of reference mean values.
+                    - "reference_sd": List of reference standard deviation values.
+                    - "reference_trimmean": List of trimmed mean values from the reference.
+                    - "reference_trimsd": List of trimmed standard deviation values from the reference.
+                    - "reference_dwell": List of reference dwell times.
+                    - "index_ref_dict": Dictionary mapping index positions in the reference sequence to index positions in the read.
+
+        Raises:
+        ------
+        AttributeError
+            If an attribute is missing or cannot be accessed, the method will skip writing and pass silently.
+        """
         try:
             dataset_dict = {}
             dataset_dict[self.id] = {
@@ -509,9 +686,41 @@ class RawCurrentReadDataset:
             pass
 
     def get_dataset(self):
+        """Returns itself
+
+        Returns:
+            RawCurrentReadDataset
+        """
         return self
 
     def get_dictionairy(self):
+        """
+        Generates a dictionary containing the dataset information for the current read.
+
+        Returns:
+        -------
+        dict
+            A dictionary with the dataset information structured as follows:
+                - "read_id": The read ID.
+                - "basecall_sequence": Sequence from the basecall data.
+                - "basecall_mean": List of basecall mean values.
+                - "basecall_sd": List of basecall standard deviation values.
+                - "basecall_trimmean": List of trimmed mean values from the basecall.
+                - "basecall_trimsd": List of trimmed standard deviation values from the basecall.
+                - "basecall_dwell": List of basecall dwell times.
+                - "reference_sequence": Sequence from the reference data.
+                - "reference_mean": List of reference mean values.
+                - "reference_sd": List of reference standard deviation values.
+                - "reference_trimmean": List of trimmed mean values from the reference.
+                - "reference_trimsd": List of trimmed standard deviation values from the reference.
+                - "reference_dwell": List of reference dwell times.
+                - "index_ref_dict": List of tuples mapping index positions in the reference sequence to index positions in the read.
+
+        Raises:
+        ------
+        AttributeError
+            If an attribute is missing or cannot be accessed, the method returns None.
+        """
         try:
             dataset_dict = {}
             dataset_dict[self.id] = {

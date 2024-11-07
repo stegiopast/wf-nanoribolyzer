@@ -62,7 +62,7 @@ logger.setLevel("INFO")
 #                                                                                                                                   #
 #####################################################################################################################################
 
-def fragment_based_readtail_analysis(df_name,bamfile_name,output_path,logger):
+def fragment_based_readtail_analysis(df_name:str,bamfile_name:str,output_path:str,logger:logging.Logger):
     """
     Perform polyU analysis on fragments from a DataFrame based on reads in a BAM file.
 

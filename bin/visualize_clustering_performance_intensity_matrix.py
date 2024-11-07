@@ -11,6 +11,9 @@ import plotly.graph_objects as go
 import plotly
 
 
+#Visualizes different results of the template-free clustering approaches
+
+
 #####################################################################################################################################
 #                                                                                                                                   #
 #                                                                                                                                   #
@@ -208,14 +211,10 @@ def plot_matrix(
     ax.scatter(
         x=start_points, y=end_points, alpha=alphas, s=1, c=color_dict[color_sample]
     )
-    #ax2.scatter(
-    #    x=start_points, y=end_points, alpha=alphas, s=1, c=color_dict[color_sample]
-    #)
     
     for template, start, end in zip(
         template_df["Fragment"], template_df["Start"], template_df["End"]
     ):
-        #ax.plot(start,end,'ro', markersize=0.5)
         ax.hlines(
             y=end, xmin=start, xmax=end, color="red", linewidth=0.3, linestyles="dashed"
         )

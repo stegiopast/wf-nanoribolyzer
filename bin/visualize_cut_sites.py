@@ -11,6 +11,21 @@ import plotly
 from random import seed,uniform
 import plotly.io as pio
 
+# Script extracts start and end sites 
+# obtained by the template-based analysis and 
+# transforms them to a html based scatterplot  
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                    Argument parser                                                                #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
+
 opt_parser = argparse.ArgumentParser()
 
 opt_parser.add_argument("-s", "--start_sites_df", dest="start_sites_df", help="Insert a sample bam file", metavar="FILE")
@@ -25,6 +40,17 @@ end_sites_df_path = options.end_sites_df
 reference_path = options.reference
 output_path = options.output_path
 
+
+#####################################################################################################################################
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                       Script                                                                      #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#                                                                                                                                   #
+#####################################################################################################################################
 
 fasta_file = pysam.FastaFile(reference_path)
 reference = fasta_file.references[0]
@@ -86,7 +112,6 @@ fig.update_layout(
     plot_bgcolor='rgba(0,0,0,0)'
 )
 
-#plotly.offline.plot(fig, filename=f"{output_path}/cut_sites.html")
 plotly.io.write_html(fig, f"{output_path}/cut_sites.html")
 
 
