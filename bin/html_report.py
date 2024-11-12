@@ -406,7 +406,7 @@ def generate_html_report(directory, output_file):
         intensity_matrix_tag.string = 'The intensity matrix plot shows the min-max\
             normalized amount of reads sharing the same start and end points on the 45S reference after alignment (top).\
             The interactive plot (bottom) represents a sub sampled version\
-            of the intensity matrix showing the 25000 most abundant clusters.'
+            of the intensity matrix showing the 15000 most abundant clusters.'
         intensity_matrix_title_div.append(intensity_matrix_tag)
         body.append(intensity_matrix_title_div)   
         

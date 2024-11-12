@@ -246,7 +246,7 @@ def plot_matrix(
     dbscan_df.to_csv(f"{output}/intensity_matrix.csv", sep=";", index=None)
 
     filtered_dbscan_df = dbscan_df.sort_values(by="n_reads", ascending=False)[
-        0 : min(25000, dbscan_df.shape[0])
+        0 : min(15000, dbscan_df.shape[0])
     ]
     start_points = filtered_dbscan_df.iloc[:, 0]
     end_points = filtered_dbscan_df.iloc[:, 1]
