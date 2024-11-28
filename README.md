@@ -20,21 +20,21 @@ Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com
 
 ![General Pipeline](./figures/General_pipeline.png)
 
-The analysis workflow of NanoRibolyzer starts with the pod5 output format of ONT’s MinKnow. Reads are basecalled using dorado basecaller (cite). All sequenced reads are basecalled and trimmed with Porechop (cite). The trimmed reads become aligned with the map-ont flag of minimap2 (cite) to the 45SN1 reference of hg38 (cite). The ids of 45SN1 aligning reads are used to filter the original pod5 file. The filtered pod5 file is rebasecalled using the integrated models for modification detection and polyA taillength of dorado. The read ids in the resulting unaligned bam file is used to collect metainformation about reads on a single nucleotide resolution. 
-Rebasecalled reads become aligned to the 45SN1 reference. Resulting bam files are used to perform several clustering algorithms. The pipeline includes a reference-based and two reference-free clustering approaches.  
+The analysis workflow of NanoRibolyzer starts with the pod5 output format of ONT’s MinKnow. Reads are basecalled using dorado [basecaller](https://github.com/nanoporetech/dorado). All sequenced reads are basecalled and trimmed with [Porechop](https://github.com/rrwick/Porechop). The trimmed reads become aligned with the map-ont flag of [minimap2](https://github.com/lh3/minimap2) to the 45SN1 reference of [hg38](https://www.gencodegenes.org/human/). The ids of 45SN1 aligning reads are used to filter the original pod5 file. The filtered pod5 file is rebasecalled using the integrated models for modification detection and polyA taillength of dorado. The read ids in the resulting unaligned bam file is used to collect metainformation about reads on a single nucleotide resolution. 
+Rebasecalled reads become aligned to the 45SN1 reference. Resulting bam files are used to perform several clustering algorithms. The pipeline includes a template-based and template-free clustering approaches.  
 
 ### Template based fragment association
 
 ![Template based clustering](./figures/Template_based_clustering.png)
 
-The reference-based algorithm performs an association of sequenced reads to literature based ribosomal intermediates. In this approach the minimal overlap pairs between a query read and all possible intermediates becomes determined. The minimal overlap is determined by defining the minimal relative overlap of query over intermediate and intermediate over query. After defining the minimal overlap for each possible query-intermediate pair, the argument of the maximal overlap-pair is used for the intermediate association. Read clusters are stored in tsv format including the read ids, the absolute and relative amount and the start and end sites of all reads in a cluster. Non clustered reads are stored in a separate file. Moreover, bed files with the read clusters are stored to enable visualization on the integrate genome viewer (igv). The 45SN1 reference fasta in the ribolyzer references repository must be used for visualization. 
+The reference-based algorithm performs an association of sequenced reads to literature based ribosomal intermediates. In this approach the minimal reciprocal overlap for each query-template pair becomes determined. The argmax of the overlap-pair defines the template a query is associated with. Read clusters are stored in tsv format including the read ids, the absolute and relative amount and the start and end sites of all reads in a cluster. Non clustered reads are stored in a separate file. Moreover, bed files with the read clusters are stored to enable visualization on the [integrative genomics viewer (igv)](https://igv.org/). The 45SN1 reference fasta in the ribolyzer references repository must be used for visualization. 
 
 
 ### Template free fragment association
 
 ![Template free clustering](./figures/Template_free_clustering.png)
 
-The reference-free algorithms are based on a preceding intensity matrix construction. Read ids become embedded in a 45SN1 length x 45SN1 length matrix by using their start and end points of the alignment as coordinates. The intensity of a coordinate in the matrix is determined by the number of reads aligning to it. 
+The reference-free algorithms are based on a preceding intensity matrix construction. Read ids become embedded in a 45SN1 length x 45SN1 length 2D matrix by using their start and end points of the alignment as coordinates. The intensity of a coordinate in the matrix is determined by the number of reads aligning to it. The resulting intensity hubs are clustered in two ways.
 
 1. In the first clustering approach all reads sharing a start and end site are interpreted as a read cluster. The approach is most performant with reads not underlying degradation processes. 
 2. The second approach is using a hierarchical density-based clustering approach with alternating neighbourhood ([HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) to cluster reads sharing similar start and end sites in the intensity matrix. HDBSCAN determines clusters of high intensity read groups having several neighbouring read groups in the intensity matrix. Coordinates on the intensity matrix with a high intensity lacking neighbours are defined as independent clusters. Resulting clusters of the HDBSCAN approach can be summarized by either constructing a consensus sequence of reads belonging to a cluster (higher demand) or by extracting a reference sequence from the 45SN1 of hg38 by using the minimal start point and the maximal end point of the cluster. (lower demand)  
@@ -195,19 +195,10 @@ NanRibolyzer uses dorado based models to asses modification frequencies on the 4
 For many plots shown here an interactive html based figure will be provided by the output of NanoRibolyzer. Please download the example [html](./figures/rRNA_report.html) file and open it in a browser of your choice. The presented output is integrated in Epi2Me and will be directly accessible on the plattform. 
 
 ## Software versions
-All basecalling processes are using the latest dorado [docker environment](https://hub.docker.com/r/ontresearch/dorado/tags) ("ontresearch/dorado:latest") of ONT (Oxford Nanopore Technologies). 
+All basecalling processes are using the following dorado version [docker environment](https://hub.docker.com/r/ontresearch/dorado/tags) ("ontresearch/dorado:sha58b978562389bd0f1842601fb83cdf1eb2920218") of ONT (Oxford Nanopore Technologies). 
 For the publication of our data we used the newest models provided with dorado version 0.7.2 in May 2024.
-
-If you want to use our specific dorado version you can pull a specific docker environment from [docker hub](https://hub.docker.com/r/ontresearch/dorado/tags). 
-("ontresearch/dorado:sha58b978562389bd0f1842601fb83cdf1eb2920218") 
-
-Please be aware that you need to specify this version in the nextflow.config file by replacing ontresearch/dorado:latest at line 68. (container = "ontresearch/dorado") 
-You can do so for all versions of dorado, by finding the right tag at [docker hub](https://hub.docker.com/r/ontresearch/dorado/tags).
 
 All other processes use a [docker environment](https://hub.docker.com/r/stegiopast/nanoribolyzer_other_tools) we built for this project. ("stegiopast/nanoribolyzer_other_tools:latest") 
 The software versions of packages in the environment can be found [here](./envs/other_tools). 
 
-## References
-
-## Funding
 
