@@ -1,5 +1,5 @@
 # NanoRibolyzer
-![GitHub Release](https://img.shields.io/github/v/release/stegiopast/wf-nanoribolyzer?include_prereleases) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/stegiopast/wf-nanoribolyzer/total) [![DOI](https://zenodo.org/badge/773739360.svg)](https://doi.org/10.5281/zenodo.14619875)
+![GitHub Release](https://img.shields.io/github/v/release/stegiopast/wf-nanoribolyzer?include_prereleases) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/stegiopast/wf-nanoribolyzer/) [![DOI](https://zenodo.org/badge/773739360.svg)](https://doi.org/10.5281/zenodo.14619875)
 
 ## Abstract
 NanoRibolyzer is an Epi2Me compatible tool to analyse ribosomal RNA biogenesis pathway at single nucleotide resolution. 
