@@ -560,6 +560,7 @@ def create_colored_bed(
     output_folder: str = output,
     output_file: str = "",
     sample_type: str = "",
+    ref_data:dict = {}
 ):
     """
     Generates BED files with colored annotations based on read counts from a CSV file.
@@ -680,7 +681,7 @@ def create_colored_bed(
             "Colors",
         ]
     ]
-    bed_df.iloc[:, 0] = "RNA45SN1"
+    bed_df.iloc[:, 0] = ref_data["ID"]
     with open(f"{output}{output_file}", "w") as fp:
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
 
@@ -698,7 +699,7 @@ def create_colored_bed(
             "Colors",
         ]
     ]
-    bed_df.iloc[:, 0] = "RNA45SN1"
+    bed_df.iloc[:, 0] = ref_data["ID"]
     with open(f"{output}most_abundant_{output_file}", "w") as fp:
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
     
@@ -718,7 +719,7 @@ def create_colored_bed(
             "Colors",
         ]
     ]
-    bed_df.iloc[:, 0] = "RNA45SN1"
+    bed_df.iloc[:, 0] = ref_data["ID"]
     with open(f"{output}over_mean_{output_file}", "w") as fp:
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
 
@@ -737,7 +738,7 @@ def create_colored_bed(
             "Colors",
         ]
     ]
-    bed_df.iloc[:, 0] = "RNA45SN1"
+    bed_df.iloc[:, 0] = ref_data["ID"]
     with open(f"{output}top_100_{output_file}", "w") as fp:
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
     
@@ -755,7 +756,7 @@ def create_colored_bed(
             "Colors",
         ]
     ]
-    bed_df.iloc[:, 0] = "RNA45SN1"
+    bed_df.iloc[:, 0] = ref_data["ID"]
     with open(f"{output}top_150_{output_file}", "w") as fp:
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
 
@@ -1010,12 +1011,13 @@ simple_consensus_df = pd.DataFrame(
 )
 simple_consensus_df.to_csv(f"{output}fragment_df_simple.csv", sep=";")
 bed_consensus_df = final_df[["ID", "Refstart", "Refend", "ID"]]
-bed_consensus_df.iloc[:, 0] = "RNA45SN1"
+bed_consensus_df.iloc[:, 0] = ref_data["ID"]
 create_colored_bed(
     table_name=f"{output}fragment_df.csv",
     output_folder=output,
     output_file="no_template.bed",
     sample_type=sample_type,
+    ref_data=ref_data
 )
 alignment_df = alignment_df.to_pandas(use_pyarrow_extension_array=True)
 alignment_df.to_csv(f"{output}alignment_df.csv", sep=";")

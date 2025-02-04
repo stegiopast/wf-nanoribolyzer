@@ -76,6 +76,14 @@ opt_parser.add_argument(
     metavar="FILE",
 )
 
+opt_parser.add_argument(
+    "-m",
+    "--model_organism",
+    dest="model_organism",
+    help="Determine your model organism (Human,Yeast)",
+    
+)
+
 
 options = opt_parser.parse_args()
 taillength_file = options.taillength_name
@@ -84,6 +92,7 @@ output_path = options.output_path
 color_sample = options.color_sample
 reference_path = options.reference
 fragment_df_path = options.fragment_df_path
+model_organism = options.model_organism
 
 #####################################################################################################################################
 #                                                                                                                                   #
@@ -108,11 +117,18 @@ taillength_df = pl.read_csv(
 
 fragment_df = pd.read_csv(fragment_df_path, sep=";", header=0, index_col=None)
 
-fragment_df = fragment_df[
-    fragment_df["Fragment"].isin(
-        ["18S", "28S", "5-8S", "5ETS", "ITS1", "ITS2", "ITS3", "3ETS"]
-    )
-]
+if model_organism == "Human":
+    fragment_df = fragment_df[
+        fragment_df["Fragment"].isin(
+            ["18S", "28S", "5-8S", "5ETS", "ITS1", "ITS2", "ITS3", "3ETS"]
+        )
+    ]
+elif model_organism == "Yeast":
+        fragment_df = fragment_df[
+            fragment_df["Fragment"].isin(
+                ["18S", "25S", "5-8S", "5ETS", "ITS1", "ITS2", "ITS3", "3ETS"]
+            )
+        ]
 
 pre_template_df = pl.read_csv(
     template_file,
@@ -220,6 +236,8 @@ ids_for_violin_plot = [id for id in pre_template_df["ID"][0:20]]
 violin_joined_df = joined_df[joined_df["position"].isin(ids_for_violin_plot)]
 violin_joined_df = violin_joined_df.sort_values(by=["end","start"],ascending=[True,True])
 
+if violin_joined_df.shape[0] == 0:
+    violin_joined_df = pd.DataFrame({"ID":["0:0:0"], "position":[0], "start":[0], "end":[0], "n_reads":[0], "rel_n_reads":[0],"taillength":[0]})
 
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 8), dpi=500)

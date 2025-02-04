@@ -72,6 +72,14 @@ opt_parser.add_argument(
     metavar="FILE",
 )
 
+opt_parser.add_argument(
+    "-m",
+    "--model_organism",
+    dest="model_organism",
+    help="Determine your model organism (Human,Yeast)",
+    
+)
+
 
 options = opt_parser.parse_args()
 taillength_file = options.taillength_name
@@ -80,7 +88,7 @@ reference_path = options.reference
 output_path = options.output_path
 color_sample = options.color_sample
 fragment_df_path = options.fragment_df_path
-
+model_organism = options.model_organism
 
 #####################################################################################################################################
 #                                                                                                                                   #
@@ -122,11 +130,18 @@ joined_df = joined_df.dropna()
 
 fragment_df = pd.read_csv(fragment_df_path, sep=";", header=0, index_col=None)
 
-fragment_df_plot = fragment_df[
-    fragment_df["Fragment"].isin(
-        ["18S", "28S", "5-8S", "5ETS", "ITS1", "ITS2", "ITS3", "3ETS"]
-    )
-]
+if model_organism == "Human":
+    fragment_df_plot = fragment_df[
+        fragment_df["Fragment"].isin(
+            ["18S", "28S", "5-8S", "5ETS", "ITS1", "ITS2", "ITS3", "3ETS"]
+        )
+    ]
+elif model_organism == "Yeast":
+        fragment_df_plot = fragment_df[
+            fragment_df["Fragment"].isin(
+                ["18S", "25S", "5-8S", "5ETS", "ITS1", "ITS2", "ITS3", "3ETS"]
+            )
+        ]
 
 
 # def filter_outliers(
@@ -179,21 +194,39 @@ for sample, color in zip(
 ):
     color_dict[sample] = color
 
-formatter_list = [
-    "18S-E",
-    "21S-C",
-    "21S",
-    "26S",
-    "30S",
-    "36S",
-    "32S",
-    "28.5S",
-    "12S",
-    "7S",
-    "5-8S",
-    "18S",
-    "28S",
-]  # ,"5ETS","5ETS-01","ITS1","ITS2","3ETS"]
+if model_organism == "Human":
+    formatter_list = [
+        "18S-E",
+        "21S-C",
+        "21S",
+        "26S",
+        "30S",
+        "36S",
+        "32S",
+        "28.5S",
+        "12S",
+        "7S",
+        "5-8S",
+        "18S",
+        "28S",
+    ]  # ,"5ETS","5ETS-01","ITS1","ITS2","3ETS"]
+elif model_organism == "Yeast":
+    formatter_list = [
+        "25S",
+        "23S",
+        "22S",
+        "21S",
+        "20S",
+        "32S",
+        "27SA",
+        "27SB",
+        "25.5S",
+        "7S",
+        "6S",
+        "5-8S",
+        "18S",
+        "25S"
+    ]  # ,"5ETS","5ETS-01","ITS1","ITS2","3ETS"]
 fig, ax = plt.subplots(1, 1, figsize=(8, 8), dpi=500)
 sns.violinplot(
     data=joined_df,

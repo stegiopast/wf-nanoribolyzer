@@ -35,6 +35,7 @@ bamfile = pysam.AlignmentFile(bamfile_name, "rb", check_sq=False)
 # Fetch taillength from bamfile
 # Construct dataframe
 list_read_data = []
+list_read_ids = []
 for read in bamfile.fetch(until_eof=True):
     read_id = read.query_name
     for i in read.get_tags():
@@ -42,8 +43,15 @@ for read in bamfile.fetch(until_eof=True):
             taillength = i[1]
     try:
         list_read_data.append([read_id, taillength])
+        list_read_ids.append(read_id)
     except:
+        list_read_ids.append(read_id)
         continue
+    
+if len(list_read_data) == 0:
+    for read_id in list_read_ids:
+        list_read_data.append([read_id, 0])
+    
 df_read_data = pd.DataFrame(list_read_data, columns=["read_id", "taillength"])
 df_read_data.index = df_read_data["read_id"]
 

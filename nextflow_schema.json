@@ -27,6 +27,13 @@
                     "description": "Select a color for the html report and the plots",
                     "help_text": ""
                 },
+                "model_organism": {
+                    "title": "Define the model organism of the experiment",
+                    "type": "string",
+                    "enum": ["Human","Yeast"],
+                    "description": "Human or Yeast are available for now.",
+                    "help_text": "Human (Homo sapiens) and Yeast (Saccharomyces cerevisiae) are currently integrated model organisms. We are working on the integration of further organisms."
+                },
                 "basecalling_model": {
                     "title": "Basecalling Model",
                     "type": "string",

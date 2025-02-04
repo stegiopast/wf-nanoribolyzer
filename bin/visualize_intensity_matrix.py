@@ -59,6 +59,14 @@ opt_parser.add_argument(
     metavar="FILE",
 )
 
+opt_parser.add_argument(
+    "-m",
+    "--model_organism",
+    dest="model_organism",
+    help="Determine your model organism (Human,Yeast)",
+    
+)
+
 
 options = opt_parser.parse_args()
 
@@ -66,6 +74,7 @@ alignment_df_name = options.alignment_df_name
 output = options.output
 template_df_name = options.template_df
 color_sample = options.color_sample
+model_organism = options.model_organism
 
 
 # Logger construction
@@ -153,7 +162,7 @@ def create_intensity_matrix(fusion_alignment_df: pl.DataFrame):
 
 
 def plot_matrix(
-    dbscan_matrix: np.array, color_sample: str, template_df_name: str, id_dict: dict
+    dbscan_matrix: np.array, color_sample: str, template_df_name: str, id_dict: dict, model_oragnism: str
 ):
     """
     Plot the DBSCAN matrix with overlayed template fragments and save the plot and data.
@@ -169,6 +178,8 @@ def plot_matrix(
     id_dict : dict
         A dictionary where keys are string representations of start and end points in the format "start:end", 
         and values are lists of IDs corresponding to these start and end points.
+    model_organism: str
+        A string determining the model organism. Human and Yeast are available.
 
     This function performs the following steps:
     1. Reads the template DataFrame from the provided CSV file.
@@ -189,11 +200,19 @@ def plot_matrix(
     >>> plot_matrix(dbscan_matrix, color_sample, template_df_name, id_dict)
     """
     template_df = pd.read_csv(template_df_name, sep=";", header=0, index_col=None)
-    template_df = template_df[
-        template_df["Fragment"].isin(
-            ["18S", "28S", "5-8S", "5ETS", "ITS1", "ITS2", "ITS3", "3ETS"]
-        )
-    ]
+    
+    if model_oragnism == "Human":
+        template_df = template_df[
+            template_df["Fragment"].isin(
+                ["18S", "28S", "5-8S", "5ETS", "ITS1", "ITS2", "ITS3", "3ETS"]
+            )
+        ]
+    elif model_organism == "Yeast":
+        template_df = template_df[
+            template_df["Fragment"].isin(
+                ["18S", "25S", "5-8S", "5ETS", "ITS1", "ITS2", "ITS3", "3ETS"]
+            )
+        ]
     dbscan_df = pd.DataFrame(dbscan_matrix)
     start_points = dbscan_df.iloc[:, 0]
     end_points = dbscan_df.iloc[:, 1]
@@ -326,4 +345,4 @@ alignment_df = pl.read_csv(
     has_header=True,
 )
 dbscan_matrix, id_dict = create_intensity_matrix(alignment_df)
-plot_matrix(dbscan_matrix, color_sample, template_df_name, id_dict)
+plot_matrix(dbscan_matrix, color_sample, template_df_name, id_dict, model_organism)

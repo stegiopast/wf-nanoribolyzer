@@ -47,6 +47,10 @@ println "Demand"
 println params.demand
 println ""
 
+println "Model Organism"
+println params.model_organism
+println ""
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                                                         // 
 //                                                                                                                                                         //
@@ -134,7 +138,7 @@ process trim_barcodes{
 //                                                                                                                                                         // 
 //                                                                                                                                                         //
 //                                                                                                                                                         //
-//                                                             Alignment of basecalled sequence to RNA45SN1                                                //
+//                                                        Alignment of basecalled sequence to reference seq                                                //
 //                                                                                                                                                         //
 //                                                                                                                                                         //
 //                                                                                                                                                         //
@@ -265,7 +269,7 @@ process rebasecall_filtered_files{
         samtools index filtered_pod5_basecalled.bam -@ ${params.threads}
     else
         dorado basecaller --device "cuda:0" --estimate-poly-a --emit-moves sup,m6A,pseU ${filtered_pod5}\
-	| samtools fastq -T "*" --threads ${params.threads}\
+        | samtools fastq -T "*" --threads ${params.threads}\
         | minimap2 -t ${params.threads} -y --MD -ax map-ont reference.fasta -\
         | samtools sort --threads ${params.threads}\
         | samtools view -b -F 3884 --threads ${params.threads}\
@@ -425,11 +429,12 @@ process fragment_based_readtail_analysis{
         path(filtered_bam)
         path(filtered_bam_bai)
         path(template_csv)
+        path(fasta_file)
     output:
         path("*")
         val 1, emit: done
     """
-    python ${projectDir}/bin/readtail_analysis.py -i ${filtered_bam} -r ${template_csv} -o ./ 
+    python ${projectDir}/bin/readtail_analysis.py -i ${filtered_bam} -r ${template_csv} -o ./ -f ${fasta_file}
     """
 }
 
@@ -457,7 +462,7 @@ process visualize_polyA_associated_templates{
         path("*")
         val 1, emit: done
     """
-    python ${projectDir}/bin/visualize_taillengths.py -a ${template_alignment_csv} -t ${tail_esimation_csv} -c ${params.color} -o ./ -f ${templates} -r ${reference}
+    python ${projectDir}/bin/visualize_taillengths.py -a ${template_alignment_csv} -t ${tail_esimation_csv} -c ${params.color} -o ./ -f ${templates} -r ${reference} -m ${params.model_organism}
     """
 }
 
@@ -485,7 +490,7 @@ process visualize_polyA_associated_intensity_clusters{
         path("*")
         val 1, emit: done
     """
-    python ${projectDir}/bin/visualize_taillengths_clustering.py -a ${intensity_alignment_csv} -t ${tail_esimation_csv} -c ${params.color} -o ./ -f ${templates} -r ${reference}
+    python ${projectDir}/bin/visualize_taillengths_clustering.py -a ${intensity_alignment_csv} -t ${tail_esimation_csv} -c ${params.color} -o ./ -f ${templates} -r ${reference} -m ${params.model_organism}
     """
 }
 
@@ -515,7 +520,7 @@ process visualize_polyA_associated_hdbscan_clusters{
         path("*")
         val 1, emit: done
     """
-    python ${projectDir}/bin/visualize_taillengths_clustering.py -a ${hdbscan_alignment_csv} -t ${tail_esimation_csv} -c ${params.color} -o ./ -f ${templates} -r ${reference}
+    python ${projectDir}/bin/visualize_taillengths_clustering.py -a ${hdbscan_alignment_csv} -t ${tail_esimation_csv} -c ${params.color} -o ./ -f ${templates} -r ${reference} -m ${params.model_organism}
     """
 }
 
@@ -544,7 +549,7 @@ process visualize_intensity_matrix{
         path("*")
         val 1, emit: done
     """
-    python ${projectDir}/bin/visualize_intensity_matrix.py -a ${alignment_df} -t ${templates} -c ${params.color} -o ./
+    python ${projectDir}/bin/visualize_intensity_matrix.py -a ${alignment_df} -t ${templates} -c ${params.color} -o ./ -m ${params.model_organism}
     """
 }
 
@@ -632,7 +637,7 @@ process visualize_reference_coverage{
         path("*.png")
         val 1, emit: done
     """
-    python ${projectDir}/bin/visualize_rRNA_coverage.py -a ${template_alignment_csv} -f ${templates}  -r ${reference} -o ./ -c ${params.color}
+    python ${projectDir}/bin/visualize_rRNA_coverage.py -a ${template_alignment_csv} -f ${templates}  -r ${reference} -o ./ -c ${params.color} -m ${params.model_organism}
     """
 }
 
@@ -721,6 +726,21 @@ process create_report {
 
 
 workflow{
+    if (params.model_organism == "Human"){
+        fasta_reference_file = "${projectDir}/references/RNA45SN1.fasta"
+        ribosomal_intermediates_file = "${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv"
+        modification_reference_file = "${projectDir}/references/rRNA_modifications_conv.bed"
+        println fasta_reference_file
+        println ribosomal_intermediates_file
+        println modification_reference_file
+    } else if (params.model_organism == "Yeast"){
+        fasta_reference_file = "${projectDir}/references/RDN37-1.fa"
+        ribosomal_intermediates_file = "${projectDir}/references/Literature_Fragments_and_cut_sites_RDN37-1.csv"
+        modification_reference_file = "${projectDir}/references/rRNA_yeast_modifications_conv.bed"
+        println fasta_reference_file
+        println ribosomal_intermediates_file
+        println modification_reference_file
+    }
     dorado_basecalling(
         "${params.sample_folder}", 
         "${params.basecalling_model}"
@@ -730,7 +750,7 @@ workflow{
         )
     align_to_45SN1(
         trim_barcodes.out.basecalled_fastq, 
-        file("${projectDir}/references/RNA45SN1.fasta")
+        file(fasta_reference_file)
         )
     filter_pod5_for_RNA45s_aligning_reads(
         align_to_45SN1.out.filtered_bam, 
@@ -740,7 +760,7 @@ workflow{
         )
     rebasecall_filtered_files(
         filter_pod5_for_RNA45s_aligning_reads.out.filtered_pod5, 
-        file("${projectDir}/references/RNA45SN1.fasta"), 
+        file(fasta_reference_file), 
         "${params.basecalling_model}"
         )
     extract_polyA_table(
@@ -750,62 +770,63 @@ workflow{
     fragment_analysis_hdbscan(
         rebasecall_filtered_files.out.rebasecalled_bam, 
         rebasecall_filtered_files.out.rebasecalled_bam_bai,
-        file("${projectDir}/references/RNA45SN1.fasta")
+        file(fasta_reference_file)
         )
     fragment_analysis_intensity(
         rebasecall_filtered_files.out.rebasecalled_bam, 
         rebasecall_filtered_files.out.rebasecalled_bam_bai,
-        file("${projectDir}/references/RNA45SN1.fasta"),
+        file(fasta_reference_file),
         fragment_analysis_hdbscan.out.done
         )
     template_driven_fragment_analysis(
         rebasecall_filtered_files.out.rebasecalled_bam, 
         rebasecall_filtered_files.out.rebasecalled_bam_bai,
-        file("${projectDir}/references/RNA45SN1.fasta"), 
-        file("${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv"),
+        file(fasta_reference_file), 
+        file(ribosomal_intermediates_file),
         fragment_analysis_intensity.out.done
         )
     fragment_based_readtail_analysis(
         rebasecall_filtered_files.out.rebasecalled_bam,
         rebasecall_filtered_files.out.rebasecalled_bam_bai,
-        template_driven_fragment_analysis.out.template_csv
+        template_driven_fragment_analysis.out.template_csv,
+        file(fasta_reference_file)
         )
     visualize_intensity_matrix(
         template_driven_fragment_analysis.out.template_alignment_csv,
-        file("${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv")
+        file(ribosomal_intermediates_file)
         )
     visualize_polyA_associated_templates(
         template_driven_fragment_analysis.out.template_alignment_csv,
-        extract_polyA_table.out.tail_esimation_csv,file("${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv"),
-        file("${projectDir}/references/RNA45SN1.fasta")
+        extract_polyA_table.out.tail_esimation_csv,file(ribosomal_intermediates_file),
+        file(fasta_reference_file)
         )
     visualize_polyA_associated_intensity_clusters(
         fragment_analysis_intensity.out.fragment_df,
         extract_polyA_table.out.tail_esimation_csv,
-        file("${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv"),
-        file("${projectDir}/references/RNA45SN1.fasta")
+        file(ribosomal_intermediates_file),
+        file(fasta_reference_file)
         )
     visualize_polyA_associated_hdbscan_clusters(
         fragment_analysis_hdbscan.out.fragment_df,
         extract_polyA_table.out.tail_esimation_csv,
-        file("${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv"),
-        file("${projectDir}/references/RNA45SN1.fasta")
+        file(ribosomal_intermediates_file),
+        file(fasta_reference_file)
         )
     visualize_modifications(
         rebasecall_filtered_files.out.rebasecalled_bam,
         rebasecall_filtered_files.out.rebasecalled_bam_bai,
-        file("${projectDir}/references/RNA45SN1.fasta"),
-        file("${projectDir}/references/rRNA_modifications_conv.bed")
+        file(fasta_reference_file),
+        file(modification_reference_file)
         )
     visualize_cut_sites(
         template_driven_fragment_analysis.out.start_sites,
         template_driven_fragment_analysis.out.end_sites,
-        file("${projectDir}/references/RNA45SN1.fasta")
+        file(fasta_reference_file)
         )
     visualize_reference_coverage(
         template_driven_fragment_analysis.out.template_alignment_csv,
-        file("${projectDir}/references/Literature_Fragments_and_cut_sites_RNA45SN1.csv"),
-        file("${projectDir}/references/RNA45SN1.fasta")
+        file(ribosomal_intermediates_file),
+        file(fasta_reference_file)
     )
     check_all_done(
         visualize_intensity_matrix.out.done,

@@ -72,6 +72,14 @@ opt_parser.add_argument(
     metavar="FILE",
 )
 
+opt_parser.add_argument(
+    "-m",
+    "--model_organism",
+    dest="model_organism",
+    help="Determine your model organism (Human,Yeast)",
+    
+)
+
 options = opt_parser.parse_args()
 
 alignment_df_name = options.alignment_df_name
@@ -79,6 +87,7 @@ output = options.output
 fragment_df_path = options.fragment_df_path
 color_sample = options.color_sample
 reference_path = options.reference
+model_organism = options.model_organism
 
 
 
@@ -127,8 +136,12 @@ def plot_total_coverage_single_sample(
     length_of_reference: int,
     sample: str,
     fragment_df: pd.DataFrame,
+    model_organism: str
 ):
-    fragment_df = fragment_df[fragment_df["Fragment"].isin(["5-8S", "18S", "28S"])]
+    if model_organism == "Human":    
+        fragment_df = fragment_df[fragment_df["Fragment"].isin(["5-8S", "18S", "28S"])]
+    elif model_organism == "Yeast":
+        fragment_df = fragment_df[fragment_df["Fragment"].isin(["5-8S", "18S", "25S"])]
     coverage_counter_list = np.array([0 for nucleotide in range(length_of_reference)])
     coverage_index_list = [i + 1 for i in range(length_of_reference)]
     for start_position, end_position in zip(a_df["Refstart"], a_df["Refend"]):
@@ -186,26 +199,47 @@ def plot_fragment_dynamics_single_sample(
     length_of_reference: int,
     scale: str,
     fragment_df: pd.DataFrame,
+    model_organism: str
 ):
-    list_of_fragments = [
-        "47S",
-        "45S",
-        "43S",
-        "30S+1",
-        "30S",
-        "26S",
-        "21S",
-        "21S-C",
-        "18S-E",
-        "36S",
-        "36S-C",
-        "32S",
-        "28.5S",
-        "12S",
-        "5-8S",
-        "18S",
-        "28S",
-    ]
+    if model_organism == "Human":
+        list_of_fragments = [
+            "47S",
+            "45S",
+            "43S",
+            "30S+1",
+            "30S",
+            "26S",
+            "21S",
+            "21S-C",
+            "18S-E",
+            "36S",
+            "36S-C",
+            "32S",
+            "28.5S",
+            "12S",
+            "5-8S",
+            "18S",
+            "28S",
+        ]
+    elif model_organism == "Yeast":
+        list_of_fragments = [
+            "37S",
+            "35S",
+            "33S",
+            "32S",
+            "27SA",
+            "27SB",
+            "25.5S",
+            "23S",
+            "22S",
+            "21S",
+            "20S",
+            "18S",
+            "7S",
+            "6S",
+            "5-8S",
+            "25S"
+        ]
     half = len(list_of_fragments) // 2
     cmap = cm.get_cmap("tab20b").colors
     # list_of_fragments = np.unique(alignment_df["Associated_Fragments_Overlap"])
@@ -349,11 +383,11 @@ reference_sequence = str(fasta_file.fetch(reference))
 fragment_df = pd.read_csv(fragment_df_path, sep=";", header=0, index_col=None)
 
 plot_total_coverage_single_sample(
-    alignment_df, "absolute", len(reference_sequence), color_sample, fragment_df
+    alignment_df, "absolute", len(reference_sequence), color_sample, fragment_df, model_organism
 )
 
 plot_total_coverage_single_sample(
-    alignment_df, "relative", len(reference_sequence), color_sample, fragment_df
+    alignment_df, "relative", len(reference_sequence), color_sample, fragment_df, model_organism
 )
 
 plot_fragment_dynamics_single_sample(
@@ -361,6 +395,7 @@ plot_fragment_dynamics_single_sample(
     length_of_reference=len(reference_sequence),
     scale="absolute",
     fragment_df=fragment_df,
+    model_organism=model_organism
 )
 
 plot_fragment_dynamics_single_sample(
@@ -368,6 +403,7 @@ plot_fragment_dynamics_single_sample(
     length_of_reference=len(reference_sequence),
     scale="absolute_all",
     fragment_df=fragment_df,
+    model_organism=model_organism
 )
 
 plot_fragment_dynamics_single_sample(
@@ -375,4 +411,5 @@ plot_fragment_dynamics_single_sample(
     length_of_reference=len(reference_sequence),
     scale="relative",
     fragment_df=fragment_df,
+    model_organism=model_organism
 )

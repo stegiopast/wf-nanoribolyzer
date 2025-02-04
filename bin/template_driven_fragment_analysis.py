@@ -403,6 +403,7 @@ def create_colored_bed(
     output_folder: str = output,
     output_file: str = "",
     sample_type: str = "",
+    ref_data: dict = {}
 ):
     """
     Generates BED files with colored annotations based on read counts from a CSV file.
@@ -526,7 +527,7 @@ def create_colored_bed(
             "Colors",
         ]
     ]
-    bed_df.iloc[:, 0] = "RNA45SN1"
+    bed_df.iloc[:, 0] = ref_data["ID"]
     template = 'track name="ItemRGBDemo" description="Item RGB demonstration" visibility=2 itemRgb="On"'
     with open(f"{output}{output_file}", "w") as fp:
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
@@ -545,7 +546,7 @@ def create_colored_bed(
             "Colors",
         ]
     ]
-    bed_df.iloc[:, 0] = "RNA45SN1"
+    bed_df.iloc[:, 0] = ref_data["ID"]
     template = 'track name="ItemRGBDemo" description="Item RGB demonstration" visibility=2 itemRgb="On"'
     with open(f"{output}most_abundant_{output_file}", "w") as fp:
         fp.write(bed_df.to_csv(sep="\t", header=False, index=False))
@@ -557,7 +558,7 @@ The mean and standarddeviation between all positions with start- or end-sites is
 """
 
 
-def determine_general_cut_sites(alignment_df: pl.DataFrame, output: str):
+def determine_general_cut_sites(alignment_df: pl.DataFrame, output: str, ref_data:dict = {}):
     """
     Determines general cut sites based on alignment data and saves results in CSV and BED formats.
 
@@ -628,7 +629,7 @@ def determine_general_cut_sites(alignment_df: pl.DataFrame, output: str):
     end_sites_list = []
     for i in tqdm(start_sites, total=len(start_sites)):
         temp_dict = {
-            "Reference": "RNA45SN1",
+            "Reference": ref_data["ID"],
             "Start": i[0],
             "End": i[0],
             "Fragment": "Startcut",
@@ -645,7 +646,7 @@ def determine_general_cut_sites(alignment_df: pl.DataFrame, output: str):
     )
     for j in tqdm(end_sites, total=len(end_sites)):
         temp_dict = {
-            "Reference": "RNA45SN1",
+            "Reference": ref_data["ID"],
             "Start": j[0],
             "End": j[0],
             "Fragment": "Endcut",
@@ -669,7 +670,7 @@ Intersecting fragment site values are determined by using the mean and the mean 
 
 
 def determine_fragment_based_cut_sites(
-    alignment_df: pl.DataFrame, fragment_df: pd.DataFrame, output: str
+    alignment_df: pl.DataFrame, fragment_df: pd.DataFrame, output: str, ref_data: dict
 ):
     """
     Determines fragment-based cut sites based on alignment and fragment data and saves results in CSV and BED formats.
@@ -831,7 +832,7 @@ def determine_fragment_based_cut_sites(
     end_sites_list = []
     for i in tqdm(start_sites, total=len(start_sites)):
         temp_dict = {
-            "Reference": "RNA45SN1",
+            "Reference": ref_data["ID"],
             "Start": i[0],
             "End": i[0],
             "Fragment": "Startcut",
@@ -849,7 +850,7 @@ def determine_fragment_based_cut_sites(
 
     for j in tqdm(end_sites, total=len(end_sites)):
         temp_dict = {
-            "Reference": "RNA45SN1",
+            "Reference": ref_data["ID"],
             "Start": j[0],
             "End": j[0],
             "Fragment": "Endcut",
@@ -996,14 +997,14 @@ alignment_df = alignment_df.hstack([pl.Series("Matches", fitting_stats_matches)]
 alignment_df = alignment_df.hstack(
     [pl.Series("Associated_Fragments_Overlap", fitting_stats_fragment)]
 )
-alignment_df = alignment_df.filter(pl.col("ID") != "RNA45SN1")
+alignment_df = alignment_df.filter(pl.col("ID") != ref_data["ID"])
 
 logger.info("Calculate general start and end sites")
-determine_general_cut_sites(alignment_df, output)
+determine_general_cut_sites(alignment_df, output, ref_data)
 logger.info("Write results for general start and end sites")
 
 logger.info("Calculate fragment based start and end sites")
-determine_fragment_based_cut_sites(alignment_df, fragment_df, output)
+determine_fragment_based_cut_sites(alignment_df, fragment_df, output, ref_data)
 logger.info("Write results for fragment based start and end sites")
 
 logger.info(" Write Results of query association")
@@ -1020,11 +1021,14 @@ over_zero_fragment_df = fragment_df.loc[fragment_df["n_Reads"] > 0]
 bed_fragment_df = pd.DataFrame(
     over_zero_fragment_df[["Reference", "Start", "End", "Fragment"]]
 )
+
+
 create_colored_bed(
     table_name=f"{output}template_fragment_df.csv",
     output_folder=output,
     output_file="template_driven.bed",
     sample_type=sample_type,
+    ref_data = ref_data
 )
 
 

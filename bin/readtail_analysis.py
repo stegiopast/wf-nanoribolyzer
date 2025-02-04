@@ -23,6 +23,7 @@ opt_parser = argparse.ArgumentParser()
 
 opt_parser.add_argument("-i", "--bamfile_name", dest="bamfile_name", help="Insert a sample bam file", metavar="FILE")
 opt_parser.add_argument("-r", "--df_name",dest="df_name", help="Insert a template csv file", metavar="FILE")
+opt_parser.add_argument("-f", "--fasta_file", dest = "fasta_file", help = "Insert a reference fasta", metavar="FILE")
 opt_parser.add_argument("-o", "--output_path",dest="output_path", help="Insert an output directory to write to", metavar="FILE")
 
 options = opt_parser.parse_args()
@@ -34,6 +35,20 @@ df_name = options.df_name
 df_name = Path(df_name)
 output_path = options.output_path
 output_path = Path(output_path)
+fasta_name = options.fasta_file
+
+fasta_file = pysam.FastaFile(fasta_name)
+reference = fasta_file.references[0]
+
+# Create a list of dictionairies with reference data as first entry, the samples will follow in further steps
+temp_list = list()
+ref_data = {
+    "ID": str(reference),
+    "Sequence": str(fasta_file.fetch(reference)),
+    "Length": len(fasta_file.fetch(reference)),
+    "Refstart": 0,
+    "Refend": len(fasta_file.fetch(reference))
+}
 
 # Logger construction
 logger = logging.getLogger(__name__)
@@ -62,7 +77,7 @@ logger.setLevel("INFO")
 #                                                                                                                                   #
 #####################################################################################################################################
 
-def fragment_based_readtail_analysis(df_name:str,bamfile_name:str,output_path:str,logger:logging.Logger):
+def fragment_based_readtail_analysis(df_name:str,bamfile_name:str,output_path:str,logger:logging.Logger, ref_data:dict):
     """
     Perform polyU analysis on fragments from a DataFrame based on reads in a BAM file.
 
@@ -106,7 +121,7 @@ def fragment_based_readtail_analysis(df_name:str,bamfile_name:str,output_path:st
             fasta_output.write("")
         with open(f"{output_path}/{fragment}_tail_comparison.fasta","w") as fasta_output:
             fasta_output.write("")
-        for read in tqdm(bamfile.fetch("RNA45SN1",start=max(0,start-2000),end=min(13350,end+2000))):
+        for read in tqdm(bamfile.fetch(ref_data["ID"],start=max(0,start-2000),end=min(ref_data["Length"],end+2000))):
             if read.query_name in fragment_id_dict:
                 if read.is_forward:
                     read_sequence = read.get_forward_sequence()
@@ -191,5 +206,5 @@ def fragment_based_readtail_analysis(df_name:str,bamfile_name:str,output_path:st
 #####################################################################################################################################
 logger.info("Readtail analysis")
 logger.info("Start tail analysis")
-fragment_based_readtail_analysis(df_name,bamfile_name,output_path,logger)
+fragment_based_readtail_analysis(df_name,bamfile_name,output_path,logger,ref_data)
 logger.info("Tail analysis finished")
