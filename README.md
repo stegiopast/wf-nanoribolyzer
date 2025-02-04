@@ -1,12 +1,12 @@
 # NanoRibolyzer
-![GitHub Release](https://img.shields.io/github/v/release/stegiopast/wf-nanoribolyzer?include_prereleases) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/stegiopast/wf-nanoribolyzer/total) [![DOI](https://zenodo.org/badge/773739360.svg)](https://doi.org/10.5281/zenodo.14619875)
+![GitHub Release](https://img.shields.io/github/v/release/stegiopast/wf-nanoribolyzer?include_prereleases) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/stegiopast/wf-nanoribolyzer/total)
 
 ## Abstract
 NanoRibolyzer is an Epi2Me compatible tool to analyse ribosomal RNA biogenesis pathway at single nucleotide resolution. 
 Nanoribolyzer aligns reads to the human RNA45SN1 of hg38. A template based read association approach allows for quantification of known ribosomal intermediates.
 Several template free clustering approaches can are integrated to detect and study unknown ribosomal RNA intermediates. 
 In addition to the template association NanoRibolyzer performs polyA tail estimation, finds abundant cut sites, extracts 5' terminal base sequences for motif analysis 
-. Outputs of NanoRibolyzer can be used to disect specific subpopulations of ribosomal RNA reads and asses characteristic properties   
+and detects the relativa abundance of specific RNA modifications. Outputs of NanoRibolyzer can be used to disect specific subpopulations of ribosomal RNA reads and asses characteristic properties   
 on a single nucleotide resolution level. 
 
 ## Userguide
@@ -20,7 +20,7 @@ Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com
 
 ![General Pipeline](./figures/General_pipeline.png)
 
-The analysis workflow of NanoRibolyzer starts with the pod5 output format of ONT’s MinKnow. Reads are basecalled using dorado [basecaller](https://github.com/nanoporetech/dorado). All sequenced reads are basecalled and trimmed with [Porechop](https://github.com/rrwick/Porechop). The trimmed reads become aligned with the map-ont flag of [minimap2](https://github.com/lh3/minimap2) to the 45SN1 reference of [hg38](https://www.gencodegenes.org/human/). The ids of 45SN1 aligning reads are used to filter the original pod5 file. The filtered pod5 file is rebasecalled using the integrated models for polyA taillength estimation of dorado. The read ids in the resulting unaligned bam file is used to collect metainformation about reads on a single nucleotide resolution. 
+The analysis workflow of NanoRibolyzer starts with the pod5 output format of ONT’s MinKnow. Reads are basecalled using dorado [basecaller](https://github.com/nanoporetech/dorado). All sequenced reads are basecalled and trimmed with [Porechop](https://github.com/rrwick/Porechop). The trimmed reads become aligned with the map-ont flag of [minimap2](https://github.com/lh3/minimap2) to the 45SN1 reference of [hg38](https://www.gencodegenes.org/human/). The ids of 45SN1 aligning reads are used to filter the original pod5 file. The filtered pod5 file is rebasecalled using the integrated models for modification detection and polyA taillength of dorado. The read ids in the resulting unaligned bam file is used to collect metainformation about reads on a single nucleotide resolution. 
 Rebasecalled reads become aligned to the 45SN1 reference. Resulting bam files are used to perform several clustering algorithms. The pipeline includes a template-based and template-free clustering approaches.  
 
 ### Template based fragment association
@@ -42,6 +42,8 @@ The reference-free algorithms are based on a preceding intensity matrix construc
 ### Poly-A estimation
 NanoRibolyzer is determining the polyA lengths with the integrated polyA length estimation tool of [dorado](https://github.com/nanoporetech/dorado). Due to the experimental design of the Oxford Nanopore Technologies related sequencing library, polyA tails can only be captured in the entire length when performing directRNA sequencing approaches, since these protocols exclusively include a ligation of oligo_dT primers at the 3'end of RNA fragments. NanoRibolyzer performs polyA estimation on cDNA as well, but it is crucial to consider the oligo_dT primers aligning on any sterical possible position of polyA tail. 
 
+### Modification detection
+Modification detection is performed with the integrated modification detection models of [dorado](https://github.com/nanoporetech/dorado). Modifications can only be detected when performing directRNA sequencing approaches, since reverse transcription and strand switching to obtain cDNA erases the chemical signature of RNA modifications.    
 
 ### Cut-site determination
 ![Cut site determination](./figures/Determine_cut_sites.png)
@@ -75,7 +77,7 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 ├── filtered_pod5
 │   │
 │   ├── filtered.pod5                           # Pod5 file with files aligning to 45SN1 of hg38
-│   ├── filtered_pod5_basecalled.bam            # 45SN1 aligned basecalling output of dorado from filtered.pod5 untrimmed. This file includes the move table.
+│   ├── filtered_pod5_basecalled.bam            # 45SN1 aligned basecalling output of dorado from filtered.pod5 untrimmed. This file includes move table (all) and modification tags (directRNA). 
 │   ├── filtered_pod5_basecalled.bam.bai        # Index for above
 │   └── sorted_filtered_reads.txt               # List with read_ids aligning 45SN1 of hg38
 │
@@ -152,7 +154,7 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 └── rRNA_report.html                            # HTML report including all plots decribed above. Will be automatically integrated in Epi2Me.
 ```
 
-NanoRibolyzer provides a variety of default output plots, which will be presented in the subsequent section. However, it also allows for downstream data analysis, linking different properties of reads like polyA taillength and  cluster size via read id. In the following we are showing a collection of plots that are directly accessible when using NanoRibolyzer. For a whole collection of accesible plots, please open this [html](./figures/rRNA_report.html) file.  
+NanoRibolyzer provides a variety of default output plots, which will be presented in the subsequent section. However, it also allows for downstream data analysis, linking different properties of reads like polyA taillength, modification ratios and  cluster size via read id. In the following we are showing a collection of plots that are directly accessible when using NanoRibolyzer. For a whole collection of accesible plots, please open this [html](./figures/rRNA_report.html) file.  
 
 ### Coverage Plots
 NanoRibolyzer aligns reads to the 45SN1 template of hg38. It shows the overall coverage of the whole reference. 
@@ -182,6 +184,12 @@ The upper left corner of the red boxes determine the (start site,end site) pair 
 
 For each reference based template the distribution of polyA taillengths is shown as a violinplot. For the template free clusters with the highest abundance the violinplot is provided in a similar manner. 
 ![Violinplot](./figures/violinplot_taillength_per_intermediate.png)
+
+### Modification ratio
+NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38.
+
+![Modification plot](./figures/relative_PseU_abundance.png)
+![Zoom Modification plot](./figures/zoom_relative_PseU_abundance.png)
 
 ### Interactive plots
 For many plots shown here an interactive html based figure will be provided by the output of NanoRibolyzer. Please download the example [html](./figures/rRNA_report.html) file and open it in a browser of your choice. The presented output is integrated in Epi2Me and will be directly accessible on the plattform. 
