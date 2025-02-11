@@ -2,17 +2,16 @@
 ![GitHub Release](https://img.shields.io/github/v/release/stegiopast/wf-nanoribolyzer?include_prereleases) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/stegiopast/wf-nanoribolyzer/total)
 
 ## Abstract
-NanoRibolyzer is an Epi2Me compatible tool to analyse ribosomal RNA biogenesis pathway at single nucleotide resolution. 
-Nanoribolyzer aligns reads to the human RNA45SN1 of hg38. A template based read association approach allows for quantification of known ribosomal intermediates.
-Several template free clustering approaches can are integrated to detect and study unknown ribosomal RNA intermediates. 
-In addition to the template association NanoRibolyzer performs polyA tail estimation, finds abundant cut sites, extracts 5' terminal base sequences for motif analysis 
-and detects the relativa abundance of specific RNA modifications. Outputs of NanoRibolyzer can be used to disect specific subpopulations of ribosomal RNA reads and asses characteristic properties   
-on a single nucleotide resolution level. 
+NanoRibolyzer is an Epi2Me-compatible tool to analyze ribosomal RNA biogenesis pathway at single nucleotide resolution. 
+NanoRibolyzer aligns reads to the human RNA45SN1 of hg38. A template based read association approach allows for quantification of known ribosomal intermediates.
+Several template free clustering approaches are integrated to detect and study unknown ribosomal RNA intermediates. 
+In addition to the template association, NanoRibolyzer performs polyA tail estimation, finds abundant cut sites, extracts 5' terminal base sequences for motif analysis 
+and detects the relativ abundance of specific RNA modifications. Outputs of NanoRibolyzer can be used to dissect specific subpopulations of ribosomal RNA reads and assess characteristic properties on a single nucleotide resolution level. 
 
-## Userguide
-To use NanoRibolyzer [Epi2Me](https://labs.epi2me.io/downloads/),[Nextflow](https://www.nextflow.io/docs/latest/install.html) and [Docker](https://docs.docker.com/engine/install/) must be installed.
+## User guide
+To use NanoRibolyzer [Epi2Me](https://labs.epi2me.io/downloads/), [Nextflow](https://www.nextflow.io/docs/latest/install.html) and [Docker](https://docs.docker.com/engine/install/) must be installed.
 
-To download NanoRibolyzer open Epi2Me and navigate to Launch and press the button Import Workflow. A pop-up window will appear in which you should copy the following link: "https://github.com/stegiopast/wf-nanoribolyzer"
+To download NanoRibolyzer, open Epi2Me and navigate to Launch and press the button Import Workflow. A pop-up window will appear in which you should copy the following link: "https://github.com/stegiopast/wf-nanoribolyzer"
 Press download and the Workflow should be integrated in Epi2Me. On Windows we recommend to install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and subsequently install Epi2Me, Nextflow and Docker within the command line.
 Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on WSL.
 
@@ -20,27 +19,26 @@ Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com
 
 ![General Pipeline](./figures/General_pipeline.png)
 
-The analysis workflow of NanoRibolyzer starts with the pod5 output format of ONT’s MinKnow. Reads are basecalled using dorado [basecaller](https://github.com/nanoporetech/dorado). All sequenced reads are basecalled and trimmed with [Porechop](https://github.com/rrwick/Porechop). The trimmed reads become aligned with the map-ont flag of [minimap2](https://github.com/lh3/minimap2) to the 45SN1 reference of [hg38](https://www.gencodegenes.org/human/). The ids of 45SN1 aligning reads are used to filter the original pod5 file. The filtered pod5 file is rebasecalled using the integrated models for modification detection and polyA taillength of dorado. The read ids in the resulting unaligned bam file is used to collect metainformation about reads on a single nucleotide resolution. 
+The analysis workflow of NanoRibolyzer starts with the pod5 output format of ONT’s MinKnow. Reads are basecalled using dorado [basecaller](https://github.com/nanoporetech/dorado). All sequenced reads are basecalled and trimmed with [Porechop](https://github.com/rrwick/Porechop). The trimmed reads become aligned with the map-ont flag of [minimap2](https://github.com/lh3/minimap2) to the 45SN1 reference of [hg38](https://www.gencodegenes.org/human/). The ids of reads aligning to 45SN1 are used to filter the original pod5 file. The filtered pod5 file is rebasecalled using the integrated models for modification detection and polyA taillength of dorado. The read ids in the resulting unaligned bam file is used to collect metainformation about reads on a single nucleotide resolution. 
 Rebasecalled reads become aligned to the 45SN1 reference. Resulting bam files are used to perform several clustering algorithms. The pipeline includes a template-based and template-free clustering approaches.  
 
-### Template based fragment association
+### Template-based fragment association
 
 ![Template based clustering](./figures/Template_based_clustering.png)
 
-The reference-based algorithm performs an association of sequenced reads to literature based ribosomal intermediates. In this approach the minimal reciprocal overlap for each query-template pair becomes determined. The argmax of the overlap-pair defines the template a query is associated with. Read clusters are stored in tsv format including the read ids, the absolute and relative amount and the start and end sites of all reads in a cluster. Non clustered reads are stored in a separate file. Moreover, bed files with the read clusters are stored to enable visualization on the [integrative genomics viewer (igv)](https://igv.org/). The 45SN1 reference fasta in the ribolyzer references repository must be used for visualization. 
+The reference-based algorithm performs an association of sequenced reads to literature-based ribosomal intermediates. In this approach, the minimal reciprocal overlap for each query-template pair becomes determined. The argmax of the overlap-pair defines the template a query is associated with. Read clusters are stored in tsv format including the read ids, the absolute and relative amount and the start and end sites of all reads in a cluster. Unclustered reads are stored in a separate file. Moreover, bed files with the read clusters are stored to enable visualization on the [integrative genomics viewer (igv)](https://igv.org/). The 45SN1 reference fasta in the ribolyzer references repository must be used for visualization. 
 
-
-### Template free fragment association
+### Template-free fragment association
 
 ![Template free clustering](./figures/Template_free_clustering.png)
 
 The reference-free algorithms are based on a preceding intensity matrix construction. Read ids become embedded in a 45SN1 length x 45SN1 length 2D matrix by using their start and end points of the alignment as coordinates. The intensity of a coordinate in the matrix is determined by the number of reads aligning to it. The resulting intensity hubs are clustered in two ways.
 
 1. In the first clustering approach all reads sharing a start and end site are interpreted as a read cluster. The approach is most performant with reads not underlying degradation processes. 
-2. The second approach is using a hierarchical density-based clustering approach with alternating neighbourhood ([HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) to cluster reads sharing similar start and end sites in the intensity matrix. HDBSCAN determines clusters of high intensity read groups having several neighbouring read groups in the intensity matrix. Coordinates on the intensity matrix with a high intensity lacking neighbours are defined as independent clusters. Resulting clusters of the HDBSCAN approach can be summarized by either constructing a consensus sequence of reads belonging to a cluster (higher demand) or by extracting a reference sequence from the 45SN1 of hg38 by using the minimal start point and the maximal end point of the cluster. (lower demand)  
+2. The second approach is using a hierarchical density-based clustering approach with alternating neighbourhood ([HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) to cluster reads sharing similar start and end sites in the intensity matrix. HDBSCAN determines clusters of high intensity read groups having several neighbouring read groups in the intensity matrix. Coordinates on the intensity matrix with a high intensity lacking neighbours are defined as independent clusters. Resulting clusters of the HDBSCAN approach can be summarized by either constructing a consensus sequence of reads belonging to a cluster (higher demand) or by extracting a reference sequence from the 45SN1 of hg38 by using the minimal start point and the maximal end point of the cluster (lower demand).  
 
 ### Poly-A estimation
-NanoRibolyzer is determining the polyA lengths with the integrated polyA length estimation tool of [dorado](https://github.com/nanoporetech/dorado). Due to the experimental design of the Oxford Nanopore Technologies related sequencing library, polyA tails can only be captured in the entire length when performing directRNA sequencing approaches, since these protocols exclusively include a ligation of oligo_dT primers at the 3'end of RNA fragments. NanoRibolyzer performs polyA estimation on cDNA as well, but it is crucial to consider the oligo_dT primers aligning on any sterical possible position of polyA tail. 
+NanoRibolyzer is determining the polyA lengths with the integrated polyA length estimation tool of [dorado](https://github.com/nanoporetech/dorado). Due to the experimental design of the Oxford Nanopore Technologies related sequencing library, polyA tails can only be captured in the entire length when performing directRNA sequencing approaches, since these protocols exclusively include a ligation of oligo_dT primers at the 3'end of RNA fragments. NanoRibolyzer performs polyA estimation on cDNA as well, but it is crucial to consider the oligo_dT primers aligning on any sterically possible position of the polyA tail. 
 
 ### Modification detection
 Modification detection is performed with the integrated modification detection models of [dorado](https://github.com/nanoporetech/dorado). Modifications can only be detected when performing directRNA sequencing approaches, since reverse transcription and strand switching to obtain cDNA erases the chemical signature of RNA modifications.    
@@ -53,7 +51,7 @@ A determination of significant abundant start and end sites is computed using th
 ### Extraction of 20 nucleotides before polyA tail
 ![Motif extraction](./figures/Motif_extraction.png)
 
-NanoRibolyzer performs an extraction of the last 20 nucleotides before a polyA tail. Each read is respectively investigated. Starting from the 3’ end of a trimmed read the polyA tail starting position is determined by finding the first triple adenine (AAA) pattern on the read. Starting from the determined point the algorithm iterates over the nucleotides towards the 5’end until less or equal 50% of the nucleotides are adenines (A). From that point the algorithm iterates towards the 3’end again, until the observed position of the iteration is an adenine and more or equal 90% of the nucleotides are adenines to define the end point of the polyA tail. The last 20 nucleotides from 5’ to 3’ end of the determined end point are extracted and stored in three ways. First the end sites are sorted in a txt format file including only the 20-nucleotide sequence, which can be used as direct input for motif [enrichment analysis tools](https://meme-suite.org/meme/tools/streme). Secondly, the reads are stored with their read ids and the 20-nucleotide sequence in fasta format. Thirdly, the reads are stored with their read ids, the 20-nucleotide sequence and the unchanged 3'end sequence for auality assessment in a second fasta file.
+NanoRibolyzer performs an extraction of the last 20 nucleotides before a polyA tail. Each read is respectively investigated. Starting from the 3’ end of a trimmed read the polyA tail starting position is determined by finding the first triple adenine (AAA) pattern on the read. Starting from the determined point the algorithm iterates over the nucleotides towards the 5’end until less or equal 50% of the nucleotides are adenines (A). From that point the algorithm iterates towards the 3’end again, until the observed position of the iteration is an adenine and more or equal 90% of the nucleotides are adenines to define the end point of the polyA tail. The last 20 nucleotides from 5’ to 3’ end of the determined end point are extracted and stored in three ways. First the end sites are sorted in a txt format file including only the 20-nucleotide sequence, which can be used as direct input for motif [enrichment analysis tools](https://meme-suite.org/meme/tools/streme). Secondly, the reads are stored with their read ids and the 20-nucleotide sequence in fasta format. Thirdly, the reads are stored with their read ids, the 20-nucleotide sequence and the unchanged 3'end sequence for quality assessment in a second fasta file.
 
 ## Outputs
 NanoRibolyzer provides files, tables and graphics in different subfolders. Here we describe all the outputs in detail to enable users the performance of downstream analysis. 
@@ -154,51 +152,47 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 └── rRNA_report.html                            # HTML report including all plots decribed above. Will be automatically integrated in Epi2Me.
 ```
 
-NanoRibolyzer provides a variety of default output plots, which will be presented in the subsequent section. However, it also allows for downstream data analysis, linking different properties of reads like polyA taillength, modification ratios and  cluster size via read id. In the following we are showing a collection of plots that are directly accessible when using NanoRibolyzer. For a whole collection of accesible plots, please open this [html](./figures/rRNA_report.html) file.  
+NanoRibolyzer provides a variety of default output plots, which will be presented in the subsequent section. However, it also allows for downstream data analysis, linking different properties of reads like polyA tail length, modification ratios and cluster size via read id. In the following we are showing a collection of plots that are directly accessible when using NanoRibolyzer. For a whole collection of accessible plots, please open this [html file](./figures/rRNA_report.html).  
 
 ### Coverage Plots
 NanoRibolyzer aligns reads to the 45SN1 template of hg38. It shows the overall coverage of the whole reference. 
 ![45SN1 coverage](./figures/coverage_total_sample_absolute.png)
 
-The read coverage of different literature based fragments during ribosomal biogenesis is shown, which allows the assesment of the read association performance. 
+The read coverage of different literature-based fragments during ribosomal biogenesis is shown, which allows the assessment of the read association performance. 
 ![Template based coverage](./figures/coverage_fragments_absolute.png)
 
+### Intensity matrix and clustering
 
-### Intensity Matrix and clustering
-
-Aligned reads become collected in an 2 dimensional intensity matrix, which is constructed by (start site, end site) pairs. The intensity of a coordiante in the matrix is determined by the min max normalized read abundance. The contrast of the normalized values is leveraged by an addition of 1% to each datapoint > 0. The absolute abundance of reads can be found in the instensity_matrix output folder. 
+Aligned reads are collected in a twodimensional intensity matrix, which is constructed by (start site, end site) pairs. The intensity of a coordinate in the matrix is determined by the min max normalized read abundance. The contrast of the normalized values is leveraged by an addition of 1% to each datapoint > 0. The absolute abundance of reads can be found in the instensity_matrix output folder. 
 
 ![Intensity Matrix](./figures/intensity_matrix.png)
 
-Template free clustering approaches are performed using the creates matrix as input. 
-An intensity based approach extracts (start site, end site) datapoints with maximal abundance.  
-The upper left corner of the red boxes determine the (start site,end site) pair of determined clusters. 
+Template-free clustering approaches are performed using the created matrix as input.
+An intensity-based approach extracts (start site, end site) datapoints with maximum abundance.  
+The upper left corner of the red boxes determine the (start site, end site) pair of determined clusters. 
 ![Highest intensity Matrix](./figures/highest_intensity_matrix.png)
 
-A density based approach [HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) uses the information of neighbourhood to find template free read clusters. 
-The upper left corner of the red boxes determine the (start site,end site) pair of determined clusters. 
+A density-based approach [HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) uses the information of neighbourhood to find template-free read clusters. 
+The upper left corner of the red boxes determine the (start site, end site) pair of determined clusters. 
 ![HDBSCAN intensity Matrix](./figures/hdbscan_intensity_matrix.png)
 
+### PolyA tail length prediction
 
-### PolyA taillength prediction
-
-For each reference based template the distribution of polyA taillengths is shown as a violinplot. For the template free clusters with the highest abundance the violinplot is provided in a similar manner. 
+For each reference-based template, the distribution of polyA tail lengths is shown as a violin plot. For the template-free clusters with the highest abundance, the violin plot is provided in a similar manner. 
 ![Violinplot](./figures/violinplot_taillength_per_intermediate.png)
 
 ### Modification ratio
-NanRibolyzer uses dorado based models to asses modification frequencies on the 45SN1 template of hg38.
+NanoRibolyzer uses dorado-based models to assess modification frequencies on the 45SN1 template of hg38.
 
 ![Modification plot](./figures/relative_PseU_abundance.png)
 ![Zoom Modification plot](./figures/zoom_relative_PseU_abundance.png)
 
 ### Interactive plots
-For many plots shown here an interactive html based figure will be provided by the output of NanoRibolyzer. Please download the example [html](./figures/rRNA_report.html) file and open it in a browser of your choice. The presented output is integrated in Epi2Me and will be directly accessible on the plattform. 
+For many plots shown here, an interactive html-based figure will be provided by the output of NanoRibolyzer. Please download the example [html](./figures/rRNA_report.html) file and open it in a browser of your choice. The presented output is integrated in Epi2Me and will be directly accessible on the platform. 
 
 ## Software versions
 All basecalling processes are using the following dorado version [docker environment](https://hub.docker.com/r/ontresearch/dorado/tags) ("ontresearch/dorado:sha58b978562389bd0f1842601fb83cdf1eb2920218") of ONT (Oxford Nanopore Technologies). 
-For the publication of our data we used the newest models provided with dorado version 0.7.2 in May 2024.
+For the publication of our data, we used the newest models provided with dorado version 0.7.2 in May 2024.
 
 All other processes use a [docker environment](https://hub.docker.com/r/stegiopast/nanoribolyzer_other_tools) we built for this project. ("stegiopast/nanoribolyzer_other_tools:latest") 
 The software versions of packages in the environment can be found [here](./envs/other_tools). 
-
-
