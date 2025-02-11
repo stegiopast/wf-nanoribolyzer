@@ -227,6 +227,10 @@ elif model_organism == "Yeast":
         "18S",
         "25S"
     ]  # ,"5ETS","5ETS-01","ITS1","ITS2","3ETS"]
+
+if joined_df.shape[0] == 0:
+    joined_df = pd.DataFrame({"ID":["0:0:0"], "position":[0], "start":[0], "end":[0], "n_reads":[0], "rel_n_reads":[0],"taillength":[0]})    
+
 fig, ax = plt.subplots(1, 1, figsize=(8, 8), dpi=500)
 sns.violinplot(
     data=joined_df,
