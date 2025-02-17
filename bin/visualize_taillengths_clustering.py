@@ -148,7 +148,7 @@ pre_template_df = pl.read_csv(
 pre_template_df = pre_template_df.sort(by=["rel_n_Reads"], descending=[True])[
     0 : min(300, pre_template_df.shape[0])
 ]
-pre_template_df = pre_template_df.sort(by=["Refend"], descending=[False])
+pre_template_df = pre_template_df.sort(by=["rel_n_Reads","Refend"], descending=[True,False])
 
 template_dict = []
 for position, ids, refstart, refend, n_reads, rel_n_reads in zip(
@@ -230,7 +230,7 @@ for sample, color in zip(
     color_dict[sample] = color
 
 
-pre_template_df = pre_template_df.sort(by=["rel_n_Reads"], descending=[True])
+pre_template_df = pre_template_df.sort(by=["rel_n_Reads","Refend"], descending=[True,False])
 
 ids_for_violin_plot = [id for id in pre_template_df["ID"]][0:20]
 violin_joined_df = joined_df[joined_df["position"].isin(ids_for_violin_plot)]
