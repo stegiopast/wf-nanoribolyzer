@@ -176,7 +176,7 @@ def plot_matrix(
     >>> id_dict = {"1:2": ["id1", "id2"], "3:4": ["id3"], "5:6": ["id4", "id5"]}
     >>> plot_matrix(dbscan_matrix, color_sample, template_df_name, id_dict)
     """
-    template_df = pd.read_csv(template_df_name, sep="\t", header=None, index_col=None)
+    template_df = pd.read_csv(template_df_name, sep=";", header=0, index_col=None)
     dbscan_df = pd.DataFrame(dbscan_matrix)
     start_points = dbscan_df.iloc[:, 0]
     end_points = dbscan_df.iloc[:, 1]
@@ -184,18 +184,7 @@ def plot_matrix(
     alphas = dbscan_df.iloc[:, 2] / maximum
     alphas = alphas + 0.01
     alphas[alphas > 1] = 1
-    template_df.columns = [
-            "ID",
-            "Start",
-            "End",
-            "Fragment",
-            "Score",
-            "Strand",
-            "Thikstart",
-            "Thikend",
-            "Colors",
-        ]
-    template_df = template_df.sort_values(by="Score",ascending=False)[0:300]
+    template_df = template_df.sort_values(by="n_Reads",ascending=False)[0:300]
     color_dict = {}
     for sample, color in zip(
         ["Nucleus", "Cytoplasm", "SN1", "SN2", "SN3"],
@@ -211,23 +200,41 @@ def plot_matrix(
     ax.scatter(
         x=start_points, y=end_points, alpha=alphas, s=1, c=color_dict[color_sample]
     )
-    
-    for template, start, end in zip(
-        template_df["Fragment"], template_df["Start"], template_df["End"]
+    linewidths = template_df["n_Reads"] / max(template_df["n_Reads"])
+    linewidths = linewidths + 0.01
+    linewidths[linewidths > 1] = 1
+    linewidths = linewidths * 10
+    template_df["Linewidth"] = linewidths
+    for template, start, alt_start, end, alt_end, lwidth in zip(
+        template_df["ID"], template_df["Refstart"], template_df["Refstart_alt"], template_df["Refend"], template_df["Refend_alt"], template_df["Linewidth"]
     ):
-        ax.hlines(
-            y=end, xmin=start, xmax=end, color="red", linewidth=0.3, linestyles="dashed"
-        )
-        ax.vlines(
-            x=start, ymin=start, ymax=end, color="red", linewidth=0.3, linestyles="dashed"
-        )
-        ax.hlines(
-            y=start, xmin=start, xmax=end, color="red", linewidth=0.3, linestyles="dashed"
-        )
-        ax.vlines(
-            x=end, ymin=start, ymax=end, color="red", linewidth=0.3, linestyles="dashed"
-        )
-
+    
+        if alt_start == start:
+            ax.hlines(
+            y=end-10, xmin=start-10, xmax=alt_start+10, color="red", linewidth=lwidth
+            )
+            ax.vlines(
+                x=start-10, ymin=end-10, ymax=alt_end+10, color="red", linewidth=lwidth
+            )
+            ax.hlines(
+                y=alt_end+10, xmin=start-10, xmax=alt_start+10, color="red", linewidth=lwidth
+            )
+            ax.vlines(
+                x=alt_start+10, ymin=end+10, ymax=alt_end-10, color="red", linewidth=lwidth
+            )
+        else:    
+            ax.hlines(
+                y=end, xmin=start, xmax=alt_start, color="red", linewidth=lwidth
+            )
+            ax.vlines(
+                x=start, ymin=end, ymax=alt_end, color="red", linewidth=lwidth
+            )
+            ax.hlines(
+                y=alt_end, xmin=start, xmax=alt_start, color="red", linewidth=lwidth
+            )
+            ax.vlines(
+                x=alt_start, ymin=end, ymax=alt_end, color="red", linewidth=lwidth
+            )
 
     ax.set_xlabel("Start sites")
     ax.set_ylabel("End sites")

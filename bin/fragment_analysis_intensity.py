@@ -337,20 +337,24 @@ def intensity_clustering(
 
 def fusion_read_groups_low_demand(temp_df: pl.DataFrame, reference_dict: dict):
     if not temp_df.is_empty():
-        mean_refstart = int(temp_df["Refstart"].mean())
-        mean_refend = int(temp_df["Refend"].mean())
+        min_refstart = min(temp_df["Refstart"])
+        max_refstart = max(temp_df["Refstart"])
+        min_refend = min(temp_df["Refend"])
+        max_refend = max(temp_df["Refend"])
         final_consensus_ids = [id for id in temp_df["ID"]]
         number_of_reads = sum(temp_df["n_Reads"])
-        string = reference_dict["Sequence"][mean_refstart:mean_refend]
-        min_max_length = mean_refend - mean_refstart
+        string = reference_dict["Sequence"][min_refstart:max_refend]
+        min_max_length = max_refend - min_refstart
         absolute_base_count_array = []
         output_dict = {
-            "ID": f"{mean_refstart}:{mean_refend}:{number_of_reads}",
+            "ID": f"{min_refstart}:{max_refend}:{number_of_reads}",
             "Sequence": string,
             "Proportion_Sequence": absolute_base_count_array,
             "Length": min_max_length,
-            "Refstart": mean_refstart,
-            "Refend": mean_refend,
+            "Refstart": min_refstart,
+            "Refstart_alt":max_refstart,
+            "Refend": max_refend,
+            "Refend_alt": min_refend,
             "n_Reads": number_of_reads,
             "IDS": final_consensus_ids,
         }
@@ -412,6 +416,8 @@ def fusion_read_groups(temp_df: pl.DataFrame, reference_dict: dict):
     if not temp_df.is_empty():
         min_refstart = min(temp_df["Refstart"])
         max_refend = max(temp_df["Refend"])
+        alt_refstart = min(temp_df["Refstart"])
+        alt_refend = max(temp_df["Refend"])
         final_consensus_ids = [id for id in temp_df["ID"]]
         number_of_reads = sum(temp_df["n_Reads"])
         position_array = [
@@ -461,7 +467,9 @@ def fusion_read_groups(temp_df: pl.DataFrame, reference_dict: dict):
             "Proportion_Sequence": absolute_base_count_array,
             "Length": min_max_length,
             "Refstart": min_refstart,
+            "Refstart_alt":alt_refstart,
             "Refend": max_refend,
+            "Refend_alt": alt_refend,
             "n_Reads": number_of_reads,
             "IDS": final_consensus_ids,
         }
@@ -814,6 +822,7 @@ def intensity_fusion(
             "ID",
             "Length",
             "Refstart",
+            
             "Refend",
             "n_Reads",
             "alignment_probability"
@@ -963,7 +972,9 @@ simple_consensus_df = pd.DataFrame(
         [
             "ID",
             "Refstart",
+            "Refstart_alt",
             "Refend",
+            "Refend_alt",
             "Length",
             "n_Reads",
             "rel_n_Reads",

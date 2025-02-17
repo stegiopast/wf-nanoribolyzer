@@ -337,7 +337,7 @@ process fragment_analysis_hdbscan{
     
     """
     python ${projectDir}/bin/fragment_analysis_hdbscan.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -m 5 -s ${params.color} -d ${params.demand}
-    python ${projectDir}/bin/visualize_clustering_performance_intensity_matrix.py -a ./alignment_df.csv -t ./no_template.bed -c ${params.color} -o ./
+    python ${projectDir}/bin/visualize_clustering_performance_intensity_matrix.py -a ./alignment_df.csv -t ./fragment_df_simple.csv -c ${params.color} -o ./
     """
 }
 
@@ -371,7 +371,7 @@ process fragment_analysis_intensity{
         val 1, emit: done
     """
     python ${projectDir}/bin/fragment_analysis_intensity.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -s ${params.color} -d ${params.demand}
-    python ${projectDir}/bin/visualize_clustering_performance_intensity_matrix.py -a ./alignment_df.csv -t ./no_template.bed -c ${params.color} -o ./
+    python ${projectDir}/bin/visualize_clustering_performance_intensity_matrix.py -a ./alignment_df.csv -t ./fragment_df_simple.csv -c ${params.color} -o ./
     """
 }
 

@@ -173,51 +173,49 @@ for position, ids, refstart, refend, n_reads, rel_n_reads in zip(
 
 template_df = pl.DataFrame(template_dict)
 
-
 joined_df = template_df.join(
     taillength_df, left_on="ID", right_on="read_id", how="inner"
 ).to_pandas()
 joined_df = joined_df.dropna()
 
 
-# def filter_outliers(
-#     df, column, lower_percentile=0.25, upper_percentile=0.75, multiplier=2
-# ):
-#     """
-#     Filters out outliers from a DataFrame based on the Interquartile Range (IQR) method.
+def filter_outliers(
+    df, column, lower_percentile=0.1, upper_percentile=0.9, multiplier=2
+):
+    """
+    Filters out outliers from a DataFrame based on the Interquartile Range (IQR) method.
     
-#     Parameters:
-#     df (pd.DataFrame): The input DataFrame.
-#     column (str): The name of the column for which outliers are to be filtered.
-#     lower_percentile (float): The lower percentile to calculate Q1 (default is 0.25).
-#     upper_percentile (float): The upper percentile to calculate Q3 (default is 0.75).
-#     multiplier (float): The multiplier for the IQR to define the cutoff boundaries (default is 2).
+    Parameters:
+    df (pd.DataFrame): The input DataFrame.
+    column (str): The name of the column for which outliers are to be filtered.
+    lower_percentile (float): The lower percentile to calculate Q1 (default is 0.25).
+    upper_percentile (float): The upper percentile to calculate Q3 (default is 0.75).
+    multiplier (float): The multiplier for the IQR to define the cutoff boundaries (default is 2).
     
-#     Returns:
-#     pd.DataFrame: A DataFrame with outliers filtered out based on the specified criteria.
+    Returns:
+    pd.DataFrame: A DataFrame with outliers filtered out based on the specified criteria.
     
-#     Example:
-#     >>> data = {'Category': ['A', 'B', 'C', 'A', 'B', 'C'], 'Value': [1, 5, 3, 2, 6, 4]}
-#     >>> df = pd.DataFrame(data)
-#     >>> filtered_df = filter_outliers(df, 'Value')
-#     >>> print(filtered_df)
-#     """
-#     # Calculate the IQR
-#     Q1 = df[column].quantile(lower_percentile)
-#     Q3 = df[column].quantile(upper_percentile)
-#     IQR = Q3 - Q1
+    Example:
+    >>> data = {'Category': ['A', 'B', 'C', 'A', 'B', 'C'], 'Value': [1, 5, 3, 2, 6, 4]}
+    >>> df = pd.DataFrame(data)
+    >>> filtered_df = filter_outliers(df, 'Value')
+    >>> print(filtered_df)
+    """
+    # Calculate the IQR
+    Q1 = df[column].quantile(lower_percentile)
+    Q3 = df[column].quantile(upper_percentile)
+    IQR = Q3 - Q1
 
-#     # Define the cutoff boundaries
-#     lower_bound = Q1 - (IQR * multiplier)
-#     upper_bound = Q3 + (IQR * multiplier)
+    # Define the cutoff boundaries
+    lower_bound = Q1 - (IQR * multiplier)
+    upper_bound = Q3 + (IQR * multiplier)
 
-#     # Filter the data
-#     filtered_df = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
-#     return filtered_df, Q1, Q3
+    # Filter the data
+    filtered_df = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+    return filtered_df, Q1, Q3
 
 
-#joined_df, lower_quantile, upper_quantile = filter_outliers(joined_df, "taillength")
-# print(joined_df)
+joined_df, lower_quantile, upper_quantile = filter_outliers(joined_df, "taillength")
 
 color_dict = {}
 for sample, color in zip(
@@ -232,9 +230,12 @@ for sample, color in zip(
     color_dict[sample] = color
 
 
-ids_for_violin_plot = [id for id in pre_template_df["ID"][0:20]]
+pre_template_df = pre_template_df.sort(by=["rel_n_Reads"], descending=[True])
+
+ids_for_violin_plot = [id for id in pre_template_df["ID"]][0:20]
 violin_joined_df = joined_df[joined_df["position"].isin(ids_for_violin_plot)]
 violin_joined_df = violin_joined_df.sort_values(by=["end","start"],ascending=[True,True])
+
 
 if violin_joined_df.shape[0] == 0:
     violin_joined_df = pd.DataFrame({"ID":["0:0:0"], "position":[0], "start":[0], "end":[0], "n_reads":[0], "rel_n_reads":[0],"taillength":[0]})
@@ -324,7 +325,6 @@ joined_df_summary = joined_df_short.groupby(
     }
 )
 
-
 joined_df_summary.to_csv(
     f"{output_path}/taillength_per_cluster.csv", sep="\t", header=True, index=None
 )
@@ -342,13 +342,19 @@ fig.add_trace(
     )
 )
 
-max_n_reads = joined_df_summary["n_reads"].max()
-
 joined_df_summary = joined_df_summary.sort_values(
     by=["end", "start"], ascending=[False, False]
 )
 
+
 joined_df_summary = pd.DataFrame(joined_df_summary).fillna(value=0)
+if joined_df_summary.shape[0] == 0:
+    joined_df_summary = pd.DataFrame({"mean_taillength":[0], "median_taillength":[0], "std_taillength":[0], "start":[0], "end":[0], "rel_n_reads":[0], "n_reads":[0]})
+
+max_n_reads = joined_df_summary["n_reads"].max()
+if max_n_reads == 0:
+    max_n_reads = 1
+
 
 for (
     index,
