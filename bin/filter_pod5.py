@@ -46,5 +46,5 @@ with open(f"{destination_directory_pod5}/filtered_reads.txt", "a") as file:
 
 # filter pod5 file to obtain pod5 file with reads only aligning to rRNA (45SN1 of hg38)
 os.system(
-    f"cat {destination_directory_pod5}/filtered_reads.txt sort > {destination_directory_pod5}/sorted_filtered_reads.txt"
+    f"cat {destination_directory_pod5}/filtered_reads.txt | sort > {destination_directory_pod5}/sorted_filtered_reads.txt"
 )
