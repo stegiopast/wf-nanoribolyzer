@@ -73,7 +73,7 @@ process dorado_basecalling{
 
     output:
     val done
-    path('basecalling_output/basecalled.bam'), emit: basecalled_bam
+    path('basecalling_output/basecalled_not_trimmed.ubam'), emit: basecalled_bam
     path('basecalling_output/sequencing_summary.txt')
     path('basecalling_output/basecalled_not_trimmed.fastq.gz'), emit: fastq_not_trimmed
     path('converted_to_pod5/converted.pod5'), emit: converted_pod5
@@ -84,37 +84,40 @@ process dorado_basecalling{
     mkdir -p basecalling_output
     mkdir -p converted_to_pod5
     (ls ${sample_folder}/*.pod5) && export filetype=pod5 || export filetype=fast5 
+    #########################
     if [ \$filetype == fast5 ]
     then 
-        pod5 convert fast5 ${sample_folder}/*.fast5\
-         --output converted_to_pod5/converted.pod5\
-         --force-overwrite
-        dorado basecaller ${basecalling_model} converted_to_pod5/\
-         > basecalling_output/basecalled.bam 
-        dorado summary basecalling_output/basecalled.bam\
-         > basecalling_output/sequencing_summary.txt
-        samtools bam2fq basecalling_output/basecalled.bam\
-         -@ ${params.threads}\
-         > basecalling_output/basecalled_not_trimmed.fastq
-        gzip basecalling_output/basecalled_not_trimmed.fastq\
-         -c\
-         -1\
-          > basecalling_output/basecalled_not_trimmed.fastq.gz
+        pod5 convert fast5 ${sample_folder}/*.fast5 --output converted_to_pod5/converted.pod5 --force-overwrite
+        if [ ${params.sample_type} == "DNA" ]
+        then
+            dorado basecaller --no_trim --estimate-poly-a --emit-moves ${basecalling_model} converted_to_pod5 | samtools fastq -T "*" --threads ${params.threads} > basecalling_output/basecalled_not_trimmed.ubam
+            samtools bam2fq basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
+            gzip -c -1 basecalling_output/basecalled_not_trimmed.fastq > basecalling_output/basecalled_not_trimmed.fastq.gz
+            dorado summary basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/sequencing_summary.txt
+        else
+            dorado basecaller --no-trim --device "cuda:0" --estimate-poly-a --emit-moves sup,m6A,pseU converted_to_pod5 | samtools fastq -T "*" --threads ${params.threads} > basecalling_output/basecalled_not_trimmed.fastq
+            samtools bam2fq basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
+            gzip -c -1 basecalling_output/basecalled_not_trimmed.fastq > basecalling_output/basecalled_not_trimmed.fastq.gz
+            dorado summary basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/sequencing_summary.txt
+        fi
     fi
+    ########################
     if [ \$filetype == pod5 ]
     then
-        dorado basecaller ${basecalling_model} ${sample_folder}\
-         > basecalling_output/basecalled.bam
-        dorado summary basecalling_output/basecalled.bam\
-         > basecalling_output/sequencing_summary.txt
-        samtools bam2fq basecalling_output/basecalled.bam\
-         -@ ${params.threads}\
-         > basecalling_output/basecalled_not_trimmed.fastq
-        gzip basecalling_output/basecalled_not_trimmed.fastq\
-         -c\
-         -1\
-          > basecalling_output/basecalled_not_trimmed.fastq.gz
-        echo "No conversion needed" > converted_to_pod5/converted.pod5
+        if [ ${params.sample_type} == "DNA" ]
+        then
+        dorado basecaller --no-trim --estimate-poly-a --emit-moves ${basecalling_model} ${sample_folder} | samtools fastq -T "*" --threads ${params.threads} > basecalling_output/basecalled_not_trimmed.ubam
+            samtools bam2fq basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
+            gzip -c -1 basecalling_output/basecalled_not_trimmed.fastq > basecalling_output/basecalled_not_trimmed.fastq.gz
+            dorado summary basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/sequencing_summary.txt
+            echo "No conversion needed" > converted_to_pod5/converted.pod5
+        else
+            dorado basecaller --no-trim --device "cuda:0" --estimate-poly-a --emit-moves sup,m6A,pseU ${sample_folder} | samtools fastq -T "*" --threads ${params.threads} > basecalling_output/basecalled_not_trimmed.ubam
+            samtools bam2fq basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
+            gzip -c -1 basecalling_output/basecalled_not_trimmed.fastq > basecalling_output/basecalled_not_trimmed.fastq.gz
+            dorado summary basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/sequencing_summary.txt
+            echo "No conversion needed" > converted_to_pod5/converted.pod5
+        fi
     fi
     """
 }
@@ -126,11 +129,9 @@ process trim_barcodes{
         path(fastq_not_trimmed) 
     output:
         path("basecalled.fastq.gz"), emit: basecalled_fastq  
+    script:
     """
-    porechop\
-     -i basecalled_not_trimmed.fastq.gz\
-     -o basecalled.fastq.gz\
-     --threads ${params.threads}
+    porechop_abi --ab_initio -t ${params.threads} -i basecalled_not_trimmed.fastq.gz -o basecalled.fastq.gz
     """
 }
 
@@ -150,135 +151,24 @@ process trim_barcodes{
 
 process align_to_45SN1{
     label 'other_tools'
-    publishDir "${params.out_dir}/basecalling_output/", mode:"copy"
+    publishDir "${params.out_dir}/filtered_pod5/", mode:"copy"
     input:
         path(basecalled_fastq) 
         path(reference), stageAs:"reference.fasta"
     output:
+        path("filtered_pod5_basecalled.bam"), emit: filtered_bam
+        path("filtered_pod5_basecalled.bam.bai"), emit: filtered_bam_bai
+        path("filtered_pod5_basecalled.fastq.gz"),emit: filtered_fastq
         val 1, emit: done
-        path("filtered.bam"), emit: filtered_bam
-        path("filtered.bam.bai"), emit: filtered_bai
-        path("filtered.fastq.gz"),emit: filtered_fastq
     """
-    minimap2\
-     -ax map-ont\
-     -t ${params.threads}\
-     reference.fasta\
-     ${basecalled_fastq}\
-     | samtools view -hbS -F 3884\
-     | samtools sort\
-     > filtered.bam
+    minimap2 -y --MD -ax map-ont -t ${params.threads} reference.fasta ${basecalled_fastq} | samtools view -hbS -F 3884 | samtools sort > filtered_pod5_basecalled.bam
     #################
-    samtools bam2fq filtered.bam --threads ${params.threads} > filtered.fastq
+    samtools fastq -T "*" filtered_pod5_basecalled.bam --threads ${params.threads} > filtered_pod5_basecalled.fastq
     ##################
-    samtools index filtered.bam -@ ${params.threads}
-    gzip filtered.fastq -c > filtered.fastq.gz
+    samtools index filtered_pod5_basecalled.bam -@ ${params.threads}
+    gzip filtered_pod5_basecalled.fastq -c > filtered_pod5_basecalled.fastq.gz
     """
 }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                                                         // 
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-//                                                             Filter for reads in fast5 that align 45SN1                                                  //
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-process filter_pod5_for_RNA45s_aligning_reads{
-    label 'other_tools'
-    publishDir "${params.out_dir}/filtered_pod5/", mode:"copy"
-    input:
-        path(filtered_bam)
-        path(filtered_bai)
-        path(sample_folder)
-        path(converted_pod5), stageAs: "converted.pod5"
-    output:
-        val 1,emit: done
-        path("filtered.pod5"), emit: filtered_pod5
-        path("sorted_filtered_reads.txt"), emit: sorted_filtered_read_ids
-    """
-    mkdir -p filtered_pod5
-    (ls ${sample_folder}/*.pod5) && export filetype=pod5 || export filetype=fast5 
-    echo \$filetype
-    if [ \$filetype == pod5 ]
-    then
-        python ${projectDir}/bin/filter_pod5.py\
-         -i ${filtered_bam}\
-         -o .
-        pod5 filter ${sample_folder}/*.pod5\
-         --ids sorted_filtered_reads.txt\
-         --output filtered.pod5\
-         --missing-ok\
-         --force-overwrite\
-         --threads ${params.threads}
-    fi
-    if [ \$filetype == fast5 ]
-    then
-        python ${projectDir}/bin/filter_pod5.py\
-         -i ${filtered_bam}\
-         -o .
-        pod5 filter converted.pod5\
-         --ids sorted_filtered_reads.txt\
-         --output filtered.pod5\
-         --missing-ok\
-         --force-overwrite\
-         --threads ${params.threads}
-    fi
-    """
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                                                         // 
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-//                                      Rebasecalling in order to obtain fast5_out option and Event tables in fast5                                        //
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-//                                                                                                                                                         //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-process rebasecall_filtered_files{
-    label 'dorado_basecaller'
-    publishDir "${params.out_dir}/filtered_pod5/", mode:"copy"
-    input:
-        path(filtered_pod5)
-        path(reference), stageAs: "reference.fasta"
-        val basecalling_model
-    output:
-        val 1, emit: done
-        path("filtered_pod5_basecalled.bam") , emit: rebasecalled_bam
-        path("filtered_pod5_basecalled.bam.bai"), emit: rebasecalled_bam_bai
-    """
-    if [ ${params.sample_type} == "DNA" ]
-    then
-        dorado basecaller --estimate-poly-a --emit-moves ${basecalling_model} ${filtered_pod5}\
-        | samtools fastq -T "*" --threads ${params.threads}\
-        | minimap2 -t ${params.threads} -y --MD -ax map-ont reference.fasta -\
-        | samtools sort --threads ${params.threads}\
-        | samtools view -b -F 3884 --threads ${params.threads}\
-        > filtered_pod5_basecalled.bam 
-        samtools index filtered_pod5_basecalled.bam -@ ${params.threads}
-    else
-        dorado basecaller --device "cuda:0" --estimate-poly-a --emit-moves sup,m6A,pseU ${filtered_pod5}\
-        | samtools fastq -T "*" --threads ${params.threads}\
-        | minimap2 -t ${params.threads} -y --MD -ax map-ont reference.fasta -\
-        | samtools sort --threads ${params.threads}\
-        | samtools view -b -F 3884 --threads ${params.threads}\
-        > filtered_pod5_basecalled.bam 
-        samtools index filtered_pod5_basecalled.bam -@ ${params.threads}
-    fi
-    """
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                                                         // 
@@ -296,8 +186,8 @@ process extract_polyA_table{
     label 'other_tools'
     publishDir "${params.out_dir}/taillength_estimation/", mode:"copy"
     input:
-        path(rebasecalled_bam)
-        path(rebasecalled_bam_bai)
+        path(filtered_bam)
+        path(filtered_bam_bai)
     output:
         val 1,emit: done
         path("tail_estimation.csv"), emit: tail_esimation_csv
@@ -569,8 +459,8 @@ process visualize_modifications{
     label 'other_tools'
     publishDir "${params.out_dir}/modification_plots/", mode:"copy"
     input:
-        path(rebasecalled_bam)
-        path(rebasecalled_bam_bai)
+        path(filtered_bam)
+        path(filtered_bam_bai)
         path(reference)
         path(modifications_bed)
     output:
@@ -579,7 +469,7 @@ process visualize_modifications{
     """
     if [ ${params.sample_type} == "RNA" ]
     then
-        python ${projectDir}/bin/visualize_modifications.py -b ${rebasecalled_bam} -r ${reference} -m ${modifications_bed} -o ./
+        python ${projectDir}/bin/visualize_modifications.py -b ${filtered_bam} -r ${reference} -m ${modifications_bed} -o ./
     else
         echo "cDNA used" > modifications.log
     fi
@@ -752,42 +642,31 @@ workflow{
         trim_barcodes.out.basecalled_fastq, 
         file(fasta_reference_file)
         )
-    filter_pod5_for_RNA45s_aligning_reads(
-        align_to_45SN1.out.filtered_bam, 
-        align_to_45SN1.out.filtered_bai, 
-        "${params.sample_folder}", 
-        dorado_basecalling.out.converted_pod5
-        )
-    rebasecall_filtered_files(
-        filter_pod5_for_RNA45s_aligning_reads.out.filtered_pod5, 
-        file(fasta_reference_file), 
-        "${params.basecalling_model}"
-        )
     extract_polyA_table(
-        rebasecall_filtered_files.out.rebasecalled_bam, 
-        rebasecall_filtered_files.out.rebasecalled_bam_bai
+        align_to_45SN1.out.filtered_bam, 
+        align_to_45SN1.out.filtered_bam_bai
         )
     fragment_analysis_hdbscan(
-        rebasecall_filtered_files.out.rebasecalled_bam, 
-        rebasecall_filtered_files.out.rebasecalled_bam_bai,
+        align_to_45SN1.out.filtered_bam, 
+        align_to_45SN1.out.filtered_bam_bai,
         file(fasta_reference_file)
         )
     fragment_analysis_intensity(
-        rebasecall_filtered_files.out.rebasecalled_bam, 
-        rebasecall_filtered_files.out.rebasecalled_bam_bai,
+        align_to_45SN1.out.filtered_bam, 
+        align_to_45SN1.out.filtered_bam_bai,
         file(fasta_reference_file),
         fragment_analysis_hdbscan.out.done
         )
     template_driven_fragment_analysis(
-        rebasecall_filtered_files.out.rebasecalled_bam, 
-        rebasecall_filtered_files.out.rebasecalled_bam_bai,
+        align_to_45SN1.out.filtered_bam, 
+        align_to_45SN1.out.filtered_bam_bai,
         file(fasta_reference_file), 
         file(ribosomal_intermediates_file),
         fragment_analysis_intensity.out.done
         )
     fragment_based_readtail_analysis(
-        rebasecall_filtered_files.out.rebasecalled_bam,
-        rebasecall_filtered_files.out.rebasecalled_bam_bai,
+        align_to_45SN1.out.filtered_bam,
+        align_to_45SN1.out.filtered_bam_bai,
         template_driven_fragment_analysis.out.template_csv,
         file(fasta_reference_file)
         )
@@ -813,8 +692,8 @@ workflow{
         file(fasta_reference_file)
         )
     visualize_modifications(
-        rebasecall_filtered_files.out.rebasecalled_bam,
-        rebasecall_filtered_files.out.rebasecalled_bam_bai,
+        align_to_45SN1.out.filtered_bam,
+        align_to_45SN1.out.filtered_bam_bai,
         file(fasta_reference_file),
         file(modification_reference_file)
         )
