@@ -90,13 +90,13 @@ process dorado_basecalling{
         pod5 convert fast5 ${sample_folder}/*.fast5 --output converted_to_pod5/converted.pod5 --force-overwrite
         if [ ${params.sample_type} == "DNA" ]
         then
-            dorado basecaller --no_trim --estimate-poly-a --emit-moves ${basecalling_model} converted_to_pod5 | samtools fastq -T "*" --threads ${params.threads} > basecalling_output/basecalled_not_trimmed.ubam
-            samtools fastq -T "*" basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
+            dorado basecaller --no-trim --estimate-poly-a --emit-moves ${basecalling_model} converted_to_pod5 > basecalling_output/basecalled_not_trimmed.ubam
+            samtools fastq -T "*" --threads ${params.threads} basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
             gzip -c -1 basecalling_output/basecalled_not_trimmed.fastq > basecalling_output/basecalled_not_trimmed.fastq.gz
             dorado summary basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/sequencing_summary.txt
         else
-            dorado basecaller --no-trim --device "cuda:0" --estimate-poly-a --emit-moves sup,m5C_2OmeC,inosine_m6A_2OmeA,pseU_2OmeU,2OmeG converted_to_pod5 | samtools fastq -T "*" --threads ${params.threads} > basecalling_output/basecalled_not_trimmed.fastq
-            samtools fastq -T "*" basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
+            dorado basecaller --no-trim --device "cuda:0" --estimate-poly-a --emit-moves sup,m5C_2OmeC,inosine_m6A_2OmeA,pseU_2OmeU,2OmeG converted_to_pod5 > basecalling_output/basecalled_not_trimmed.ubam
+            samtools fastq -T "*" --threads ${params.threads} basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
             gzip -c -1 basecalling_output/basecalled_not_trimmed.fastq > basecalling_output/basecalled_not_trimmed.fastq.gz
             dorado summary basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/sequencing_summary.txt
         fi
@@ -106,14 +106,14 @@ process dorado_basecalling{
     then
         if [ ${params.sample_type} == "DNA" ]
         then
-        dorado basecaller --no-trim --estimate-poly-a --emit-moves ${basecalling_model} ${sample_folder} | samtools fastq -T "*" --threads ${params.threads} > basecalling_output/basecalled_not_trimmed.ubam
-            samtools fastq -T "*" basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
+            dorado basecaller --no-trim --estimate-poly-a --emit-moves ${basecalling_model} ${sample_folder} > basecalling_output/basecalled_not_trimmed.ubam
+            samtools fastq -T "*" --threads ${params.threads} basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
             gzip -c -1 basecalling_output/basecalled_not_trimmed.fastq > basecalling_output/basecalled_not_trimmed.fastq.gz
             dorado summary basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/sequencing_summary.txt
             echo "No conversion needed" > converted_to_pod5/converted.pod5
         else
-            dorado basecaller --no-trim --device "cuda:0" --estimate-poly-a --emit-moves sup,m5C_2OmeC,inosine_m6A_2OmeA,pseU_2OmeU,2OmeG ${sample_folder} | samtools fastq -T "*" --threads ${params.threads} > basecalling_output/basecalled_not_trimmed.ubam
-            samtools fastq -T "*" basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
+            dorado basecaller --no-trim --device "cuda:0" --estimate-poly-a --emit-moves sup,m5C_2OmeC,inosine_m6A_2OmeA,pseU_2OmeU,2OmeG ${sample_folder} > basecalling_output/basecalled_not_trimmed.ubam
+            samtools fastq -T "*" --threads ${params.threads} basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/basecalled_not_trimmed.fastq
             gzip -c -1 basecalling_output/basecalled_not_trimmed.fastq > basecalling_output/basecalled_not_trimmed.fastq.gz
             dorado summary basecalling_output/basecalled_not_trimmed.ubam > basecalling_output/sequencing_summary.txt
             echo "No conversion needed" > converted_to_pod5/converted.pod5
@@ -161,12 +161,12 @@ process align_to_45SN1{
         path("filtered_pod5_basecalled.fastq.gz"),emit: filtered_fastq
         val 1, emit: done
     """
-    minimap2 -y --MD -ax map-ont -t ${params.threads} reference.fasta ${basecalled_fastq} | samtools view -hbS -F 3884 | samtools sort > filtered_pod5_basecalled.bam
+    minimap2 -y --MD -ax map-ont -t ${params.threads} reference.fasta ${basecalled_fastq} | samtools view -b -F 3884 | samtools sort > filtered_pod5_basecalled.bam
     #################
-    samtools fastq -T "*" filtered_pod5_basecalled.bam --threads ${params.threads} > filtered_pod5_basecalled.fastq
+    samtools fastq -T "*" --threads ${params.threads} filtered_pod5_basecalled.bam > filtered_pod5_basecalled.fastq
     ##################
-    samtools index filtered_pod5_basecalled.bam -@ ${params.threads}
-    gzip filtered_pod5_basecalled.fastq -c > filtered_pod5_basecalled.fastq.gz
+    samtools index -@ ${params.threads} filtered_pod5_basecalled.bam 
+    gzip -c -1 filtered_pod5_basecalled.fastq > filtered_pod5_basecalled.fastq.gz
     """
 }
 
