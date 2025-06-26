@@ -1,5 +1,5 @@
 #!/usr/bin/ nextflow
-@Grab('com.xlson.groovycsv:groovycsv:1.1')
+//@Grab('com.xlson.groovycsv:groovycsv:1.1')
 import static com.xlson.groovycsv.CsvParser.parseCsv
 import java.io.File;
 nextflow.enable.dsl=2
@@ -601,8 +601,10 @@ process create_report {
     
 
     // Optional inputs
-    path relative_pseU_modification_abundance_html, stageAs: "modification_plots/relative_pseU_modification_abundance.html"
-    path relative_m6A_modification_abundance_html, stageAs: "modification_plots/relative_m6A_modification_abundance.html"
+    path relative_uridine_modification_abundance_html, stageAs: "modification_plots/uridine_modification_abundance.html"
+    path relative_adenine_modification_abundance_html, stageAs: "modification_plots/adenine_modification_abundance.html"
+    path relative_guanine_modification_abundance_html, stageAs: "modification_plots/guanine_modification_abundance.html"
+    path relative_cytosine_modification_abundance_html, stageAs: "modification_plots/cytosine_modification_abundance.html"
 
     output:
     path("rRNA_report.html")
@@ -736,8 +738,10 @@ workflow{
             file("${params.out_dir}/coverage_plots/coverage_fragments_absolute_all.png"),
             file("${params.out_dir}/coverage_plots/coverage_total_sample_absolute.png"),
             file("${params.out_dir}/coverage_plots/coverage_total_sample_relative.png"),
-            file("${params.out_dir}/modification_plots/relative_pseU_modification_abundance.html"),
-            file("${params.out_dir}/modification_plots/relative_m6A_modification_abundance.html")  
+            file("${params.out_dir}/modification_plots/uridine_modification_abundance.html"),
+            file("${params.out_dir}/modification_plots/adenine_modification_abundance.html"),
+            file("${params.out_dir}/modification_plots/guanine_modification_abundance.html"),
+            file("${params.out_dir}/modification_plots/cytosine_modification_abundance.html")
     )
 }
 
