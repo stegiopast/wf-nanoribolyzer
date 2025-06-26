@@ -605,7 +605,7 @@ def generate_html_report(directory, output_file):
 
     
     file_path = os.path.join(
-        directory, "modification_plots/relative_pseU_modification_abundance.html"
+        directory, "modification_plots/uridine_modification_abundance.html"
     )
     if os.path.exists(file_path):
         modification_title_div = soup.new_tag('div', **{'class': 'section'})
@@ -613,7 +613,7 @@ def generate_html_report(directory, output_file):
         modification_title_tag.string = 'Modifications on ribosomal template'
         modification_title_div.append(modification_title_tag)
         modification_text_tag = soup.new_tag('p')
-        modification_text_tag.string = 'Relative modification abundance plots for pseU (top) and m6A (bottom) modifications over the 45S reference.\
+        modification_text_tag.string = 'Relative modification abundance plots for uridine (top), adenine, guanine and cytosin (bottom) modifications over the 45S reference.\
         The modification detection is performed with the integrated dorado models for modification detection.\
         In the pseU plot the systematic C/U missmatch reported for pseU is added, since the dorado models are not taking missbasecalled bases in consideration.' 
         modification_title_div.append(modification_text_tag)
@@ -625,7 +625,16 @@ def generate_html_report(directory, output_file):
             body.append(file_content)
     
     file_path = os.path.join(
-        directory, "modification_plots/relative_m6A_modification_abundance.html"
+        directory, "modification_plots/adenine_modification_abundance.html"
+    )
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
+            # Read the content of the HTML file and append it to the body
+            file_content = BeautifulSoup(f.read(), "html.parser")
+            body.append(file_content)
+    
+    file_path = os.path.join(
+        directory, "modification_plots/guanine_modification_abundance.html"
     )
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
@@ -633,6 +642,14 @@ def generate_html_report(directory, output_file):
             file_content = BeautifulSoup(f.read(), "html.parser")
             body.append(file_content)
             
+    file_path = os.path.join(
+        directory, "modification_plots/cytosine_modification_abundance.html"
+    )
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
+            # Read the content of the HTML file and append it to the body
+            file_content = BeautifulSoup(f.read(), "html.parser")
+            body.append(file_content)
     
     with open(output_file, "w") as f:
         f.write(soup.prettify())
