@@ -650,4 +650,4 @@ fig4.update_layout(
     yaxis=dict(title="Modification frequency",gridcolor = "white"),
     plot_bgcolor='rgba(0,0,0,0)'
 )
-plotly.io.write_html(fig4, f"{output_path}/cystosine_modification_abundance.html")
+plotly.io.write_html(fig4, f"{output_path}/cytosine_modification_abundance.html")
