@@ -598,8 +598,6 @@ process create_report {
     path coverage_plot_fragments_absolute, stageAs:"coverage_plots/coverage_fragments_absolute_all.png"
     path coverage_plot_fragments_absolute, stageAs:"coverage_plots/coverage_total_sample_absolute.png"
     path coverage_plot_fragments_relative, stageAs:"coverage_plots/coverage_total_sample_relative.png"
-    
-
     // Optional inputs
     path relative_uridine_modification_abundance_html, stageAs: "modification_plots/uridine_modification_abundance.html"
     path relative_adenine_modification_abundance_html, stageAs: "modification_plots/adenine_modification_abundance.html"
