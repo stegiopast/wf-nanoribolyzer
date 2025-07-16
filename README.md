@@ -196,3 +196,11 @@ For the publication of our data, we used the newest models provided with dorado 
 
 All other processes use a [docker environment](https://hub.docker.com/r/stegiopast/nanoribolyzer_other_tools) we built for this project. ("stegiopast/nanoribolyzer_other_tools:latest") 
 The software versions of packages in the environment can be found [here](./envs/other_tools). 
+
+## Citation 
+Whenever you use our software or you build up on our work and ideas cite the following paper:
+
+Mapping human pre-rRNA processing and modification at single nucleotide resolution using long read Nanopore sequencing
+Stefan Pastore, Ludivine Wacheul, Lioba Lehmann, Stefan Mündnich, Beat Lutz, Mark Helm, Susanne Gerber, Denis L.J. Lafontaine, Tamer Butto
+bioRxiv 2025.03.01.640970; doi: https://doi.org/10.1101/2025.03.01.640970 
+
