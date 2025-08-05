@@ -852,7 +852,8 @@ def hdbscan_fusion(
                 print(temp_fusion_alignment_df.shape[0])
             iteration_counter += 1
             #temp_fusion_alignment_df = temp_fusion_alignment_df.lazy().filter(~pl.col("ID").is_in(id_list)).collect()
-            consensus_rows.append(out_dict)
+            if out_dict is not None:
+                consensus_rows.append(out_dict)
     else:
         temp_fusion_alignment_df = fusion_alignment_df.select([
             "ID",
@@ -879,7 +880,8 @@ def hdbscan_fusion(
                 iteration_counter = 0
                 print(temp_fusion_alignment_df.shape[0])
             iteration_counter += 1
-            consensus_rows.append(out_dict)
+            if out_dict is not None:
+                consensus_rows.append(out_dict)
     consensus_df = pd.DataFrame.from_dict(consensus_rows)
     consensus_df = consensus_df.sort_values(
         by=["Refstart", "Length"], ascending=[True, False]
