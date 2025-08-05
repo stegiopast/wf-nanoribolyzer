@@ -816,7 +816,8 @@ def intensity_fusion(
                 iteration_counter = 0
                 print(temp_fusion_alignment_df.shape[0])
             iteration_counter += 1
-            consensus_rows.append(out_dict)
+            if out_dict is not None:
+                consensus_rows.append(out_dict)
     else:
         temp_fusion_alignment_df = fusion_alignment_df.select([
             "ID",
@@ -843,7 +844,8 @@ def intensity_fusion(
                 used_ids = []
                 iteration_counter = 0
             iteration_counter += 1
-            consensus_rows.append(out_dict)
+            if out_dict is not None:
+                consensus_rows.append(out_dict)
     consensus_df = pd.DataFrame.from_dict(consensus_rows)
     consensus_df = consensus_df.sort_values(
         by=["Refstart", "Length"], ascending=[True, False]
