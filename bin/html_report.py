@@ -138,9 +138,9 @@ def generate_html_report(directory, output_file):
     intensity_clustering_tag.string = 'Intensity Clustering'
     menu_tag.append(intensity_clustering_tag)
     
-    hdbscan_clustering_tag = soup.new_tag('a', href='#hdbscan_clustering')
-    hdbscan_clustering_tag.string = 'HDBSCAN Clustering'
-    menu_tag.append(hdbscan_clustering_tag)
+    # hdbscan_clustering_tag = soup.new_tag('a', href='#hdbscan_clustering')
+    # hdbscan_clustering_tag.string = 'HDBSCAN Clustering'
+    # menu_tag.append(hdbscan_clustering_tag)
     
     modification_detection_tag = soup.new_tag('a', href='#modification_detection')
     modification_detection_tag.string = 'Relative modification abundance'
@@ -522,78 +522,78 @@ def generate_html_report(directory, output_file):
 
     
     
-    file_path = os.path.join(
-        directory, "polyA_hdbscan_based_clusters/polyA_tails_clustering.html"
-    )
+    # file_path = os.path.join(
+    #     directory, "polyA_hdbscan_based_clusters/polyA_tails_clustering.html"
+    # )
     
     
-    if os.path.exists(file_path):
-        hdbscan_clustering_title_div = soup.new_tag('div', **{'class': 'section'})
-        hdbscan_clustering_title_tag = soup.new_tag('h1', id='hdbscan_clustering')
-        hdbscan_clustering_title_tag.string = 'HDBSCAN Clustering'
-        hdbscan_clustering_title_div.append(hdbscan_clustering_title_tag)
-        hdbscan_clustering_tag = soup.new_tag('p')
-        hdbscan_clustering_tag.string = 'Interactive plot showing the min max normalized abundance\
-            and position on 45S reference of read clusters\
-            determined by density based clustering approach using the intensity matrix as template.\
-            The 300 biggest clusters are visualized.\
-            Additionally, the mean and stdd of polyA-tails of the clusters are shown.\
-            The taillength is determined by the polya tail prediction function integrated in dorado.\
-            For validation of the clustering approach the 300 biggest clusters are shown as squares above the instensity matrix\
-            ranging from start to end of reference on the coordinate system. The Upper left corner should allocate with a cluster showing a high intensity or read density.'
-        hdbscan_clustering_title_div.append(hdbscan_clustering_tag)
-        body.append(hdbscan_clustering_title_div)
+    # if os.path.exists(file_path):
+    #     hdbscan_clustering_title_div = soup.new_tag('div', **{'class': 'section'})
+    #     hdbscan_clustering_title_tag = soup.new_tag('h1', id='hdbscan_clustering')
+    #     hdbscan_clustering_title_tag.string = 'HDBSCAN Clustering'
+    #     hdbscan_clustering_title_div.append(hdbscan_clustering_title_tag)
+    #     hdbscan_clustering_tag = soup.new_tag('p')
+    #     hdbscan_clustering_tag.string = 'Interactive plot showing the min max normalized abundance\
+    #         and position on 45S reference of read clusters\
+    #         determined by density based clustering approach using the intensity matrix as template.\
+    #         The 300 biggest clusters are visualized.\
+    #         Additionally, the mean and stdd of polyA-tails of the clusters are shown.\
+    #         The taillength is determined by the polya tail prediction function integrated in dorado.\
+    #         For validation of the clustering approach the 300 biggest clusters are shown as squares above the instensity matrix\
+    #         ranging from start to end of reference on the coordinate system. The Upper left corner should allocate with a cluster showing a high intensity or read density.'
+    #     hdbscan_clustering_title_div.append(hdbscan_clustering_tag)
+    #     body.append(hdbscan_clustering_title_div)
 
-        with open(file_path, "r") as f:
-            # Read the content of the HTML file and append it to the body
-            file_content = BeautifulSoup(f.read(), "html.parser")
-            body.append(file_content)
+    #     with open(file_path, "r") as f:
+    #         # Read the content of the HTML file and append it to the body
+    #         file_content = BeautifulSoup(f.read(), "html.parser")
+    #         body.append(file_content)
 
-    file_path = os.path.join(
-        directory, "fragment_analysis_hdbscan/intensity_matrix.png"
-    )
-    if not os.path.exists(file_path):
-        file_path = os.path.join(
-        directory, "fragment_hdbscan_analysis/intensity_matrix.png"
-    )
-    if os.path.exists(file_path):
-        image_base64 = convert_image_to_base64(file_path)
-        with open(file_path, "r") as f:
+    # file_path = os.path.join(
+    #     directory, "fragment_analysis_hdbscan/intensity_matrix.png"
+    # )
+    # if not os.path.exists(file_path):
+    #     file_path = os.path.join(
+    #     directory, "fragment_hdbscan_analysis/intensity_matrix.png"
+    # )
+    # if os.path.exists(file_path):
+    #     image_base64 = convert_image_to_base64(file_path)
+    #     with open(file_path, "r") as f:
 
-            # Create an <img> tag for PNG files
-            img_tag = soup.new_tag(
-                "img",
-                src=f"data:image/png;base64,{image_base64}",
-                alt="Clusters detected on intensity matrix",
-                attrs={"class": "centered-img"},
-                width=800,
-                height=800
-            )
-            div_tag = soup.new_tag('div', style="text-align: center;")
-            body.append(img_tag)
-            img_tag.wrap(div_tag)
+    #         # Create an <img> tag for PNG files
+    #         img_tag = soup.new_tag(
+    #             "img",
+    #             src=f"data:image/png;base64,{image_base64}",
+    #             alt="Clusters detected on intensity matrix",
+    #             attrs={"class": "centered-img"},
+    #             width=800,
+    #             height=800
+    #         )
+    #         div_tag = soup.new_tag('div', style="text-align: center;")
+    #         body.append(img_tag)
+    #         img_tag.wrap(div_tag)
 
 
-    file_path = os.path.join(
-        directory, "polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"
-    )
-    if os.path.exists(file_path):
-        image_base64 = convert_image_to_base64(file_path)
-        with open(file_path, "r") as f:
+    # file_path = os.path.join(
+    #     directory, "polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"
+    # )
+    # if os.path.exists(file_path):
+    #     image_base64 = convert_image_to_base64(file_path)
+    #     with open(file_path, "r") as f:
 
-            # Create an <img> tag for PNG files
-            img_tag = soup.new_tag(
-                "img",
-                src=f"data:image/png;base64,{image_base64}",
-                alt="Taillength per hdbscan based cluster",
-                attrs={"class": "centered-img"},
-                width=1000,
-                height=1000
-            )
-            div_tag = soup.new_tag('div', style="text-align: center;")
-            body.append(img_tag)
-            img_tag.wrap(div_tag)
-            body.append(soup.new_tag("br"))
+    #         # Create an <img> tag for PNG files
+    #         img_tag = soup.new_tag(
+    #             "img",
+    #             src=f"data:image/png;base64,{image_base64}",
+    #             alt="Taillength per hdbscan based cluster",
+    #             attrs={"class": "centered-img"},
+    #             width=1000,
+    #             height=1000
+    #         )
+    #         div_tag = soup.new_tag('div', style="text-align: center;")
+    #         body.append(img_tag)
+    #         img_tag.wrap(div_tag)
+    #         body.append(soup.new_tag("br"))
         
     
 

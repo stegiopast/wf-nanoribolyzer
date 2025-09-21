@@ -2,7 +2,7 @@ FROM docker.io/mambaorg/micromamba:1.5-jammy
 
 USER root
 
-COPY other_tools.yaml /opt/conda.yml
+COPY other_tools_june_2025.yml /opt/conda.yml
 
 RUN micromamba install -y -n base -f /opt/conda.yml \
     && micromamba clean -afy \
