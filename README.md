@@ -148,14 +148,11 @@ Aligned reads are collected in a twodimensional intensity matrix, which is const
 
 ![Intensity Matrix](./figures/intensity_matrix.png)
 
-Template-free clustering approaches are performed using the created matrix as input.
+Template-free clustering is performed using the created matrix as input.
 An intensity-based approach extracts (start site, end site) datapoints with maximum abundance.  
 The upper left corner of the red boxes determine the (start site, end site) pair of determined clusters. 
 ![Highest intensity Matrix](./figures/highest_intensity_matrix.png)
 
-A density-based approach [HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) uses the information of neighbourhood to find template-free read clusters. 
-The upper left corner of the red boxes determine the (start site, end site) pair of determined clusters. 
-![HDBSCAN intensity Matrix](./figures/hdbscan_intensity_matrix.png)
 
 ### PolyA tail length prediction
 
