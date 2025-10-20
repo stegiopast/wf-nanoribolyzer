@@ -84,7 +84,10 @@ output_path = options.output_path
 #####################################################################################################################################
 
 literature_mod_df = pd.read_csv(literature_mod_df_path ,sep="\t",header=None,index_col=None) #"/home/stefan/wf-nanoribolyzer/references/rRNA_modifications_conv.bed"
-literature_mod_df.columns = ["reference","start","end","modification","A","B","C"]
+possible_columns = ["reference","start","end","modification","A","B","C","D","E","F","G","H"]
+literature_mod_df.columns = possible_columns[0:len(literature_mod_df.columns)]
+
+
 
 fasta_file = pysam.FastaFile(reference_path)
 reference = fasta_file.references[0]
