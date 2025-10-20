@@ -83,7 +83,9 @@ output_path = options.output_path
 #####################################################################################################################################
 
 literature_mod_df = pd.read_csv(literature_mod_df_path ,sep="\t",header=None,index_col=None) #"/home/stefan/wf-nanoribolyzer/references/rRNA_modifications_conv.bed"
-literature_mod_df.columns = ["reference","start","end","modification","A","B","C"]
+possible_columns = ["reference","start","end","modification","A","B","C","D","E","F","G","H"]
+literature_mod_df.columns = possible_columns[0:len(literature_mod_df.columns)]
+
 
 T_mod_df = literature_mod_df.loc[literature_mod_df["modification"] == "psu"]
 A_mod_df = literature_mod_df.loc[literature_mod_df["modification"].isin(["Am","m62A","m6A"])]
