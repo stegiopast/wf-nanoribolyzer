@@ -131,7 +131,10 @@ process trim_barcodes{
         path("basecalled.fastq.gz"), emit: basecalled_fastq  
     script:
     """
-    porechop_abi --ab_initio -t ${params.threads} -i basecalled_not_trimmed.fastq.gz -o basecalled.fastq.gz
+    porechop\
+     -i basecalled_not_trimmed.fastq.gz\
+     -o basecalled.fastq.gz\
+     --threads ${params.threads}
     """
 }
 
