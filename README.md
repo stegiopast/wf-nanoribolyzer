@@ -4,16 +4,42 @@
 ## Abstract
 NanoRibolyzer is an Epi2Me-compatible tool to analyze ribosomal RNA biogenesis pathway at single nucleotide resolution. 
 NanoRibolyzer aligns reads to the human RNA45SN1 of hg38. A template based read association approach allows for quantification of known ribosomal intermediates.
-Several template free clustering approaches are integrated to detect and study unknown ribosomal RNA intermediates. 
+A template free clustering approach is integrated to detect and study unknown ribosomal RNA intermediates. 
 In addition to the template association, NanoRibolyzer performs polyA tail estimation, finds abundant cut sites, extracts 5' terminal base sequences for motif analysis 
 and detects the relativ abundance of specific RNA modifications. Outputs of NanoRibolyzer can be used to dissect specific subpopulations of ribosomal RNA reads and assess characteristic properties on a single nucleotide resolution level. 
 
 ## User guide
 To use NanoRibolyzer [Epi2Me](https://labs.epi2me.io/downloads/), [Nextflow](https://www.nextflow.io/docs/latest/install.html) and [Docker](https://docs.docker.com/engine/install/) must be installed.
+On Windows we recommend to install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and subsequently install Epi2Me, Nextflow and Docker within the command line.
+Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on Linux and WSL.
 
 To download NanoRibolyzer, open Epi2Me and navigate to Launch and press the button Import Workflow. A pop-up window will appear in which you should copy the following link: "https://github.com/stegiopast/wf-nanoribolyzer"
-Press download and the Workflow should be integrated in Epi2Me. On Windows we recommend to install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and subsequently install Epi2Me, Nextflow and Docker within the command line.
-Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on WSL.
+Press download and the Workflow should be integrated in Epi2Me. 
+
+## Inputs
+
+Once the pipeline is integrated in Epi2Me the process can be launched. Click on wf-nanoribolyzer pipline button and click the Launch button. Provide the following information to run the process:
+
+-Pod5 folder-
+Absolute path to the pod5 folder which carries the pod5 files of interest for the sample. Click on the small folder icon and select the folder path via file explorer.
+
+-Colorscheme-
+Select a color in the dropdown menu, which will be used for the HTML report. You can select via dropdown menu.
+
+-Model organism-
+Human and Yeast are the currently tested model organisms for NanoRibolyzer. You can select via dropdown menu.
+
+-Basecalling model-
+We recommend you to use the sup model for the highest accuracy. You can select between sup, hac and fast via dropdown menu.
+
+-Threads-
+Select how many CPU cores should be used. 1-8 threads can be selected via dropdown menu. 
+
+-Sample type-
+Is your library cDNA or dRNA based ? DNA or RNA can be selected via drowdown menu.
+
+-Demand-
+Would you like to keep RAM usage rather low ? Low or high can be selected via dropdown menu.
 
 ## Methods
 
