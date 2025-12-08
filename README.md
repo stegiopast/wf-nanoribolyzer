@@ -20,25 +20,25 @@ Press download and the Workflow should be integrated in Epi2Me.
 
 Once the pipeline is integrated in Epi2Me the process can be launched. Click on wf-nanoribolyzer pipline button and click the Launch button. Provide the following information to run the process:
 
--Pod5 folder-
+-Pod5 folder-<br />
 Absolute path to the pod5 folder which carries the pod5 files of interest for the sample. Click on the small folder icon and select the folder path via file explorer.
 
--Colorscheme-
+-Colorscheme-<br />
 Select a color in the dropdown menu, which will be used for the HTML report. You can select via dropdown menu.
 
--Model organism-
+-Model organism-<br />
 Human and Yeast are the currently tested model organisms for NanoRibolyzer. You can select via dropdown menu.
 
--Basecalling model-
+-Basecalling model-<br />
 We recommend you to use the sup model for the highest accuracy. You can select between sup, hac and fast via dropdown menu.
 
--Threads-
+-Threads-<br />
 Select how many CPU cores should be used. 1-8 threads can be selected via dropdown menu. 
 
--Sample type-
+-Sample type-<br />
 Is your library cDNA or dRNA based ? DNA or RNA can be selected via drowdown menu.
 
--Demand-
+-Demand-<br />
 Would you like to keep RAM usage rather low ? Low or high can be selected via dropdown menu.
 
 ## Methods
