@@ -38,7 +38,7 @@ Select how many CPU cores should be used. 1-8 threads can be selected via dropdo
 #### Sample type
 Is your library cDNA or dRNA based ? DNA or RNA can be selected via drowdown menu.
 
--Demand-<br />
+#### Demand
 Would you like to keep RAM usage rather low ? Low or high can be selected via dropdown menu.
 
 ## Methods
