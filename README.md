@@ -18,6 +18,28 @@ Press download and the Workflow should be integrated in Epi2Me.
 
 NOTE: Currently NanoRibolyzer is working for Epi2Me version <=5.2.5
 
+Nanoribolyzer can also be used as a standalone nextflow pipeline via command line. You can clone or download the zipped repository to download the pipeline. Unzip the repository if necessary. For running the pipeline, a configuration file in yaml format is needed. The following entries need to be listed in the config.yaml file.
+
+```
+sample_folder: /path/to/pod5_folder/
+color: blue (orange,red,green)
+script_folder: /path/to/wf-nanoribolyzer/
+out_dir: /path/to/output_dir/
+basecalling_model: sup
+model_organism: Human (Yeast)
+threads: 8
+sample_type: RNA (DNA)
+demand: low (high)
+```
+
+Once the yaml file is established you can run the pipeline with nextflow:
+
+```bash
+nextflow run -params-file /path/to/config.yaml /path/to/wf-nanoribolyzer/main.nf
+```
+
+This will allow you to run the nanoribolyzer pipeline. Examples for downstream analysis after nanoribolyzer processing are included in the jupyter-notebook section of this repository. Test data for the workflow is stored in data and is based on dRNA sequencing.  
+
 ## Inputs
 Once the pipeline is integrated in Epi2Me the process can be launched. Click on wf-nanoribolyzer pipline button and click the Launch button. Provide the following information to run the process:
 
