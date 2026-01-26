@@ -215,24 +215,24 @@ process extract_polyA_table{
 
 
 
-process fragment_analysis_hdbscan{
-    label 'other_tools'
-    publishDir "${params.out_dir}/fragment_analysis_hdbscan/", mode:"copy"
-    input:
-        path(filtered_bam)
-        path(filtered_bam_bai)
-        path(reference), stageAs: "reference.fasta" 
-    output:
-        path("alignment_df.csv"), emit: alignment_df
-        path("fragment_df.csv"), emit: fragment_df
-        path("*")
-        val 1, emit: done
+// process fragment_analysis_hdbscan{
+//     label 'other_tools'
+//     publishDir "${params.out_dir}/fragment_analysis_hdbscan/", mode:"copy"
+//     input:
+//         path(filtered_bam)
+//         path(filtered_bam_bai)
+//         path(reference), stageAs: "reference.fasta" 
+//     output:
+//         path("alignment_df.csv"), emit: alignment_df
+//         path("fragment_df.csv"), emit: fragment_df
+//         path("*")
+//         val 1, emit: done
     
-    """
-    python ${projectDir}/bin/fragment_analysis_hdbscan.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -m 5 -s ${params.color} -d ${params.demand}
-    python ${projectDir}/bin/visualize_clustering_performance_intensity_matrix.py -a ./alignment_df.csv -t ./fragment_df_simple.csv -c ${params.color} -o ./
-    """
-}
+//     """
+//     python ${projectDir}/bin/fragment_analysis_hdbscan.py -c ${params.threads} -i ${filtered_bam} -r reference.fasta -o ./ -t 0.9 -m 5 -s ${params.color} -d ${params.demand}
+//     python ${projectDir}/bin/visualize_clustering_performance_intensity_matrix.py -a ./alignment_df.csv -t ./fragment_df_simple.csv -c ${params.color} -o ./
+//     """
+// }
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -401,21 +401,21 @@ process visualize_polyA_associated_intensity_clusters{
 //                                                                                                                                                         //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-process visualize_polyA_associated_hdbscan_clusters{
-    label 'other_tools'
-    publishDir "${params.out_dir}/polyA_hdbscan_based_clusters/", mode:"copy"
-    input:
-        path(hdbscan_alignment_csv)
-        path(tail_esimation_csv)
-        path(templates)
-        path(reference)
-    output:
-        path("*")
-        val 1, emit: done
-    """
-    python ${projectDir}/bin/visualize_taillengths_clustering.py -a ${hdbscan_alignment_csv} -t ${tail_esimation_csv} -c ${params.color} -o ./ -f ${templates} -r ${reference} -m ${params.model_organism}
-    """
-}
+// process visualize_polyA_associated_hdbscan_clusters{
+//     label 'other_tools'
+//     publishDir "${params.out_dir}/polyA_hdbscan_based_clusters/", mode:"copy"
+//     input:
+//         path(hdbscan_alignment_csv)
+//         path(tail_esimation_csv)
+//         path(templates)
+//         path(reference)
+//     output:
+//         path("*")
+//         val 1, emit: done
+//     """
+//     python ${projectDir}/bin/visualize_taillengths_clustering.py -a ${hdbscan_alignment_csv} -t ${tail_esimation_csv} -c ${params.color} -o ./ -f ${templates} -r ${reference} -m ${params.model_organism}
+//     """
+// }
 
 
 
@@ -554,7 +554,7 @@ process check_all_done {
         val visualize_intensity_matrix_done;
         val visualize_polyA_associated_templates;
         val visualize_polyA_associated_intensity_clusters_done;
-        val visualize_polyA_associated_hdbscan_clusters_done;
+        // val visualize_polyA_associated_hdbscan_clusters_done;
         val visualize_modifications_done;
         val visualize_cut_sites_done;
         val visualize_reference_coverage_done;
@@ -593,9 +593,9 @@ process create_report {
     path polyA_tails_clustering_html, stageAs: "polyA_intensity_based_clusters/polyA_tails_clustering.html"
     path intensity_matrix_intensity_clustering, stageAs: "fragment_analysis_intensity/intensity_matrix.png"
     path violinplot_taillength_per_cluster_png, stageAs: "polyA_intensity_based_clusters/violinplot_taillength_per_cluster.png"
-    path polyA_tails_hdbscan_clustering_html, stageAs: "polyA_hdbscan_based_clusters/polyA_tails_clustering.html"
-    path intensity_matrix_hdbscan_clustering, stageAs: "fragment_analysis_hdbscan/intensity_matrix.png"
-    path violinplot_taillength_per_hdbscan_cluster_png, stageAs: "polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"
+    // path polyA_tails_hdbscan_clustering_html, stageAs: "polyA_hdbscan_based_clusters/polyA_tails_clustering.html"
+    // path intensity_matrix_hdbscan_clustering, stageAs: "fragment_analysis_hdbscan/intensity_matrix.png"
+    // path violinplot_taillength_per_hdbscan_cluster_png, stageAs: "polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"
     path coverage_plot_general_absolute, stageAs: "coverage_plots/coverage_fragments_absolute.png"
     path coverage_plot_general_relative, stageAs: "coverage_plots/coverage_fragments_relative.png"
     path coverage_plot_fragments_absolute, stageAs:"coverage_plots/coverage_fragments_absolute_all.png"
@@ -649,16 +649,17 @@ workflow{
         align_to_45SN1.out.filtered_bam, 
         align_to_45SN1.out.filtered_bam_bai
         )
-    fragment_analysis_hdbscan(
-        align_to_45SN1.out.filtered_bam, 
-        align_to_45SN1.out.filtered_bam_bai,
-        file(fasta_reference_file)
-        )
+    // fragment_analysis_hdbscan(
+    //     align_to_45SN1.out.filtered_bam, 
+    //     align_to_45SN1.out.filtered_bam_bai,
+    //     file(fasta_reference_file)
+    //     )
     fragment_analysis_intensity(
         align_to_45SN1.out.filtered_bam, 
         align_to_45SN1.out.filtered_bam_bai,
         file(fasta_reference_file),
-        fragment_analysis_hdbscan.out.done
+        // fragment_analysis_hdbscan.out.done
+        extract_polyA_table.out.done
         )
     template_driven_fragment_analysis(
         align_to_45SN1.out.filtered_bam, 
@@ -688,12 +689,12 @@ workflow{
         file(ribosomal_intermediates_file),
         file(fasta_reference_file)
         )
-    visualize_polyA_associated_hdbscan_clusters(
-        fragment_analysis_hdbscan.out.fragment_df,
-        extract_polyA_table.out.tail_esimation_csv,
-        file(ribosomal_intermediates_file),
-        file(fasta_reference_file)
-        )
+    // visualize_polyA_associated_hdbscan_clusters(
+    //     fragment_analysis_hdbscan.out.fragment_df,
+    //     extract_polyA_table.out.tail_esimation_csv,
+    //     file(ribosomal_intermediates_file),
+    //     file(fasta_reference_file)
+    //     )
     visualize_modifications(
         align_to_45SN1.out.filtered_bam,
         align_to_45SN1.out.filtered_bam_bai,
@@ -714,7 +715,7 @@ workflow{
         visualize_intensity_matrix.out.done,
         visualize_polyA_associated_templates.out.done,
         visualize_polyA_associated_intensity_clusters.out.done,
-        visualize_polyA_associated_hdbscan_clusters.out.done, 
+        // visualize_polyA_associated_hdbscan_clusters.out.done, 
         visualize_modifications.out.done, 
         visualize_cut_sites.out.done,
         visualize_reference_coverage.out.done
@@ -731,9 +732,9 @@ workflow{
             file("${params.out_dir}/polyA_intensity_based_clusters/polyA_tails_clustering.html"),
             file("${params.out_dir}/fragment_analysis_intensity/intensity_matrix.png"),
             file("${params.out_dir}/polyA_intensity_based_clusters/violinplot_taillength_per_cluster.png"),
-            file("${params.out_dir}/polyA_hdbscan_based_clusters/polyA_tails_clustering.html"),
-            file("${params.out_dir}/fragment_analysis_hdbscan/intensity_matrix.png"),
-            file("${params.out_dir}/polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"),
+            // file("${params.out_dir}/polyA_hdbscan_based_clusters/polyA_tails_clustering.html"),
+            // file("${params.out_dir}/fragment_analysis_hdbscan/intensity_matrix.png"),
+            // file("${params.out_dir}/polyA_hdbscan_based_clusters/violinplot_taillength_per_cluster.png"),
             file("${params.out_dir}/coverage_plots/coverage_fragments_absolute.png"),
             file("${params.out_dir}/coverage_plots/coverage_fragments_relative.png"),
             file("${params.out_dir}/coverage_plots/coverage_fragments_absolute_all.png"),
