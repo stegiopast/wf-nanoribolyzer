@@ -16,7 +16,6 @@ Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com
 To download NanoRibolyzer, open Epi2Me and navigate to Launch and press the button Import Workflow. A pop-up window will appear in which you should copy the following link: "https://github.com/stegiopast/wf-nanoribolyzer"
 Press download and the Workflow should be integrated in Epi2Me. 
 
-NOTE: Currently NanoRibolyzer is working for Epi2Me version <=5.2.5
 
 Nanoribolyzer can also be used as a standalone nextflow pipeline via command line. You can clone or download the zipped repository to download the pipeline. Unzip the repository if necessary. For running the pipeline, a configuration file in yaml format is needed. The following entries need to be listed in the config.yaml file.
 
