@@ -74,9 +74,7 @@
                     "help_text": "Define high or low to select. For big datasets the runtime can be very high when using high. You will obtain a computed consensus sequence of clustered reads, when using high demand."
                 }
             },
-            "allOf": [
-                {
-                    "required": [
+            "required": [
                         "sample_folder",
                         "color",
                         "script_folder",
@@ -86,8 +84,6 @@
                         "demand",
                         "model_organism",
                         "gpus_in_use"
-                    ]
-                }
             ]
         }
     },
