@@ -4,20 +4,116 @@
 ## Abstract
 NanoRibolyzer is an Epi2Me-compatible tool to analyze ribosomal RNA biogenesis pathway at single nucleotide resolution. 
 NanoRibolyzer aligns reads to the human RNA45SN1 of hg38. A template based read association approach allows for quantification of known ribosomal intermediates.
-Several template free clustering approaches are integrated to detect and study unknown ribosomal RNA intermediates. 
+A template free clustering approach is integrated to detect and study unknown ribosomal RNA intermediates. 
 In addition to the template association, NanoRibolyzer performs polyA tail estimation, finds abundant cut sites, extracts 5' terminal base sequences for motif analysis 
 and detects the relativ abundance of specific RNA modifications. Outputs of NanoRibolyzer can be used to dissect specific subpopulations of ribosomal RNA reads and assess characteristic properties on a single nucleotide resolution level. 
 
+
+
+
+
 ## User guide
-To use NanoRibolyzer [Epi2Me](https://labs.epi2me.io/downloads/), [Nextflow](https://www.nextflow.io/docs/latest/install.html) and [Docker](https://docs.docker.com/engine/install/) must be installed.
+
+### Requirements
+
+Depending on the size of the dataset and the sequencing depth the demand of the pipeline varies. With MinION sequenced data and hac models the minimal requirements are:
+
+Hardware | Specs
+ :---: |  :---:
+RAM | 64GB 
+Threads | 12 
+GPU | 16GB VRAM (e.g. NVIDIA GeForce RTX 4080)
+
+Since we were working with PromethIon sequenced data and sup models, we recommend another setup of a much higher quality & price:
+
+Hardware | Specs
+ :---: |  :---:
+RAM | 256GB 
+Threads | 48 
+GPU | 48GB VRAM (e.g. NVIDIA RTX A6000)
+
+Runtime is highly dependent on the size of the dataset and the availabl hardware. A dataset of 10 million ribosomal reads with the recommended PromethION setup takes ~15 hours processing time. The minimal requirements are necessary to run this tool and will approximately run for datasets with the size of ~2 million reads. For bigger datasets the above recommended requirements for PromethION based sequencing are necessary. 
+
+### Installation
+To use NanoRibolyzer [Epi2Me](https://labs.epi2me.io/downloads/), [Nextflow](https://www.nextflow.io/docs/latest/install.html) and [Docker](https://docs.docker.com/engine/install/) must be installed vie command line.
+Alternatively, Docker and Nextflow can also be installed within the Epi2ME graphical user interface. (Settings -> Local -> Open setup) 
+On Windows we recommend to install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and subsequently install Epi2Me, Nextflow and Docker within the command line.
+Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on Linux and WSL to enable the use of GPUs in docker containers.
+These installations might take a day of your time (depending on experience 30 minutes to 1 day). Feel free to contact us via issues in this repository and we will make sure to help you out. These programms have to be installed for all workflows in Epi2ME with computational steps including GPU. 
+
 
 To download NanoRibolyzer, open Epi2Me and navigate to Launch and press the button Import Workflow. A pop-up window will appear in which you should copy the following link: "https://github.com/stegiopast/wf-nanoribolyzer"
-Press download and the Workflow should be integrated in Epi2Me. On Windows we recommend to install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and subsequently install Epi2Me, Nextflow and Docker within the command line.
-Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on WSL.
+Press download and the workflow should be integrated in Epi2Me. The import of the Nanoribolyzer workflow itself will just take a few seconds. 
+
+### Usage via Epi2Me (GUI)
+Once the download is completed it appears in the Launch section of Epi2Me from where you will be guided through the configuration steps, once you select the pipeline and press the Launch button. Configuration of the pipeline will take place within Epi2ME and the below mentioned Configuration file (config.yaml) is only needed, when starting the pipeline manually. 
+
+### Pod5 folder organization
+Store all pod5 files belonging to a sample in an independent folder. Make sure no other file than files in pod5 formats appear in that folder. 
+
+### Inputs
+The following inputs will be configured within Epi2ME:
+
+#### Pod5 folder
+Absolute path to the pod5 folder which carries the pod5 files of interest for the sample. Click on the small folder icon and select the folder path via file explorer.
+
+#### Colorscheme
+Select a color in the dropdown menu, which will be used for the HTML report. You can select via dropdown menu.
+
+#### Model organism
+Human and Yeast are the currently tested model organisms for NanoRibolyzer. You can select via dropdown menu.
+
+#### Basecalling model
+We recommend you to use the sup model for the highest accuracy. You can select between sup, hac and fast via dropdown menu.
+
+#### Threads
+Select how many CPU cores should be used. 1-8 threads can be selected via dropdown menu. 
+
+#### Sample type
+Is your library cDNA or dRNA based ? DNA or RNA can be selected via drowdown menu.
+
+#### Demand
+Would you like to keep RAM usage rather low ? Low or high can be selected via dropdown menu.
+
+
+
+
+
+
+## Manual usage via nextflow (command line)
+### Configuration file
+Nanoribolyzer can also be used as a standalone nextflow pipeline via command line. You can clone or download the zipped repository to download the pipeline. Unzip the repository if necessary. For running the pipeline, a configuration file in yaml format is needed. The following entries need to be listed in the config.yaml file.
+
+```
+sample_folder: /path/to/pod5_folder/
+color: blue (orange,red,green)
+script_folder: /path/to/wf-nanoribolyzer/
+out_dir: /path/to/output_dir/
+basecalling_model: sup
+model_organism: Human (Yeast)
+threads: 8
+sample_type: RNA (DNA)
+demand: low (high)
+```
+
+Once the yaml file is established you can run the pipeline with nextflow:
+
+```bash
+nextflow run -params-file /path/to/config.yaml /path/to/wf-nanoribolyzer/main.nf
+```
+
+This will allow you to run the nanoribolyzer pipeline. Examples for downstream analysis after nanoribolyzer processing are included in the jupyter-notebook section of this repository. 
+
+### Test data
+Test data for the workflow is stored in the folder "data" within this repository and is based on dRNA sequencing. It is just a small dataset to test the successful performance of the tool.   
+
+
+
+
+
 
 ## Methods
-
-![General Pipeline](./figures/General_pipeline.png)
+![General Pipeline](./figures/General_Pipeline.png)
 
 The analysis workflow of NanoRibolyzer starts with the pod5 output format of ONT’s MinKnow. Reads are basecalled using dorado [basecaller](https://github.com/nanoporetech/dorado). All sequenced reads are basecalled and trimmed with [Porechop](https://github.com/rrwick/Porechop). The trimmed reads become aligned with the map-ont flag of [minimap2](https://github.com/lh3/minimap2) to the 45SN1 reference of [hg38](https://www.gencodegenes.org/human/). The ids of reads aligning to 45SN1 are used to filter the original pod5 file. The filtered pod5 file is rebasecalled using the integrated models for modification detection and polyA taillength of dorado. The read ids in the resulting unaligned bam file is used to collect metainformation about reads on a single nucleotide resolution. 
 Rebasecalled reads become aligned to the 45SN1 reference. Resulting bam files are used to perform several clustering algorithms. The pipeline includes a template-based and template-free clustering approaches.  
@@ -32,13 +128,12 @@ The reference-based algorithm performs an association of sequenced reads to lite
 
 ![Template free clustering](./figures/Template_free_clustering.png)
 
-The reference-free algorithms are based on a preceding intensity matrix construction. Read ids become embedded in a 45SN1 length x 45SN1 length 2D matrix by using their start and end points of the alignment as coordinates. The intensity of a coordinate in the matrix is determined by the number of reads aligning to it. The resulting intensity hubs are clustered in two ways.
+The reference-free algorithm is based on a preceding intensity matrix construction. Read ids become embedded in a 45SN1 length x 45SN1 length 2D matrix by using their start and end points of the alignment as coordinates. The intensity of a coordinate in the matrix is determined by the number of reads aligning to it. The resulting intensity hubs are clustered:
 
-1. In the first clustering approach all reads sharing a start and end site are interpreted as a read cluster. The approach is most performant with reads not underlying degradation processes. 
-2. The second approach is using a hierarchical density-based clustering approach with alternating neighbourhood ([HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) to cluster reads sharing similar start and end sites in the intensity matrix. HDBSCAN determines clusters of high intensity read groups having several neighbouring read groups in the intensity matrix. Coordinates on the intensity matrix with a high intensity lacking neighbours are defined as independent clusters. Resulting clusters of the HDBSCAN approach can be summarized by either constructing a consensus sequence of reads belonging to a cluster (higher demand) or by extracting a reference sequence from the 45SN1 of hg38 by using the minimal start point and the maximal end point of the cluster (lower demand).  
+1. All reads sharing a start and end site are interpreted as a read cluster. The approach is most performant with reads not underlying degradation processes. 
 
 ### Poly-A estimation
-NanoRibolyzer is determining the polyA lengths with the integrated polyA length estimation tool of [dorado](https://github.com/nanoporetech/dorado). Due to the experimental design of the Oxford Nanopore Technologies related sequencing library, polyA tails can only be captured in the entire length when performing directRNA sequencing approaches, since these protocols exclusively include a ligation of oligo_dT primers at the 3'end of RNA fragments. NanoRibolyzer performs polyA estimation on cDNA as well, but it is crucial to consider the oligo_dT primers aligning on any sterically possible position of the polyA tail. 
+NanoRibolyzer is determining the polyA lengths with the integrated polyA length estimation tool of [dorado](https://github.com/nanoporetech/dorado). Due to the experimental design of the Oxford Nanopore Technologies related sequencing library, polyA tails can only be captured in the entire length when performing directRNA sequencing approaches, since these protocols exclusively include a ligation of oligo_dT primers at the 3'end of RNA fragments. When running directRNA barcoding protocols the polyA detection with dorado was highly disturbed. Therefore use this function only with the standard dRNA protocol of ONT. NanoRibolyzer performs polyA estimation on cDNA as well, but it is crucial to consider the oligo_dT primers aligning on any sterically possible position of the polyA tail. We recommend dorado based polyA analysis only on standard protocol dRNA sequencing data.  
 
 ### Modification detection
 Modification detection is performed with the integrated modification detection models of [dorado](https://github.com/nanoporetech/dorado). Modifications can only be detected when performing directRNA sequencing approaches, since reverse transcription and strand switching to obtain cDNA erases the chemical signature of RNA modifications.    
@@ -99,18 +194,6 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 │   ├── most_abundant_template_driven.bed       # Bed file visualizing fragment abundance in igv. Only fragments carrying more than mean * 2.stdd reads.
 │   └── template_driven_analysis.bed            # Log file of template_based_analysis script
 │
-├── fragment_hdbscan_analysis                   # Outputs of template free clustering approaches. Same structure is given for fragment_intensity_analysis.
-│   │
-│   ├── alignment_df.csv                        # List of aligned reads with aligned sequences reconstructed by cigarstrings, includes start and end sites on the reference
-│   ├── fragment_df.csv                         # For each fragment being determined by template free association a consensus sequence, proportional sequence, read ids, absolute and relative number of reads are provided
-│   ├── fragment_df_simple.csv                  # A simpler form of the table above
-│   ├── unclustered_reads_df.csv                # Stores all reads, which could not be clustered in a read group. The table has an equal format as alignment_df.csv  
-│   ├── no_template.bed                         # Representation of all fragments found with template free clustering approaches.    
-│   ├── most_abundant_no_template.bed           # Fragments found with template free clustering approaches carrying more than mean * 2stdd of the reads  
-│   ├── top_150_no_template.bed                 # Top 150 Fragments found with template free clustering carrying most of the reads
-│   ├── intensity_matrix.png                    # Intensity matrix used for the clustering approach with 300 clusters carrying the most reads. Clusters are shown as red rectangles of which the upper left corner represents common (start,end) sites. 
-│   └── fragment_analysis.log                   # Log file of fragment_hdbscan_analysis script
-│
 ├── readtail_analysis                           # Extract the last 20 nucleotides in every reads before the polyA tail. Output of this folder can be used for motif enrichment analysis
 │   │
 │   ├── X.txt                                   # List of 20 nucleotide long sequences of readtails before polyA tail for all reads associated with literature fragment (X).  
@@ -130,12 +213,6 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 │   ├── taillength_per_intermediate_mean.csv    # Table storing the information for the html objects above
 │   ├── taillength_per_intermediate_min_max.csv # Table storing the information for the html objects above
 │   └── violinplot_taillength_per_intermediate.png   # Figure showing the polyA taillength for all reads associated to specific literature based fragments 
-│
-├── polyA_hdbscan_based_clusters                # Assesment of polyA taillengths for reads associated to specific fragments resulting from hdbscan. Same folder structure for polyA_intensity_base_clusters
-│   │                   
-│   ├── polyA_tails_clustering.html             # PolyA taillength of reads associated with reference free fragments. The 300 most abundant fragments are shown.  
-│   ├── polyA_tails_intermediates_min_max.html  # PolyA taillength of reads associated with literature based fragments. Start and end sites of shown fragments are determined by minimal start and maximal end site of reads associated to a fragment.      
-│   └── polyA_tails_intermediates_template.html # PolyA taillength of reads associated with literature based fragments. Start and end sites fit to the start and end sites of literature based fragments.
 │
 ├── coverage_plots                              # Plots showing the read coverage of reference based templated after association
 │   │
@@ -167,14 +244,11 @@ Aligned reads are collected in a twodimensional intensity matrix, which is const
 
 ![Intensity Matrix](./figures/intensity_matrix.png)
 
-Template-free clustering approaches are performed using the created matrix as input.
+Template-free clustering is performed using the created matrix as input.
 An intensity-based approach extracts (start site, end site) datapoints with maximum abundance.  
 The upper left corner of the red boxes determine the (start site, end site) pair of determined clusters. 
 ![Highest intensity Matrix](./figures/highest_intensity_matrix.png)
 
-A density-based approach [HDBSCAN](https://scikit-learn.org/1.5/modules/generated/sklearn.cluster.HDBSCAN.html) uses the information of neighbourhood to find template-free read clusters. 
-The upper left corner of the red boxes determine the (start site, end site) pair of determined clusters. 
-![HDBSCAN intensity Matrix](./figures/hdbscan_intensity_matrix.png)
 
 ### PolyA tail length prediction
 
@@ -196,3 +270,19 @@ For the publication of our data, we used the newest models provided with dorado 
 
 All other processes use a [docker environment](https://hub.docker.com/r/stegiopast/nanoribolyzer_other_tools) we built for this project. ("stegiopast/nanoribolyzer_other_tools:latest") 
 The software versions of packages in the environment can be found [here](./envs/other_tools). 
+
+## Data availability
+Data of the below mentioned publication is available on ENA with the project number [PRJEB90082](https://www.ebi.ac.uk/ena/browser/view/PRJEB48183). We uploaded files in the pod5 raw current format in zipped tar archives. To get access to these tar.gz files navigate to the project page and click on "Show column selection". There you should tick the "submitted_ftp" box to let the archive files entries appear for download. Unpack the tar archives via command line.
+
+```bash
+tar -xvf /path/to/filename.tar.gz
+```
+
+
+## Citation 
+Whenever you use our software or you build up on our work and ideas cite the following paper:
+
+Mapping human pre-rRNA processing and modification at single nucleotide resolution using long read Nanopore sequencing
+Stefan Pastore, Ludivine Wacheul, Lioba Lehmann, Stefan Mündnich, Beat Lutz, Mark Helm, Susanne Gerber, Denis L.J. Lafontaine, Tamer Butto
+bioRxiv 2025.03.01.640970; doi: https://doi.org/10.1101/2025.03.01.640970 
+
