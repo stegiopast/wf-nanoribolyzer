@@ -271,7 +271,7 @@ For the publication of our data, we used the newest models provided with dorado 
 All other processes use a [docker environment](https://hub.docker.com/r/stegiopast/nanoribolyzer_other_tools) we built for this project. ("stegiopast/nanoribolyzer_other_tools:latest") 
 The software versions of packages in the environment can be found [here](./envs/other_tools). 
 
-### Data availability
+## Data availability
 Data of the below mentioned publication is available on ENA with the project number [PRJEB90082](https://www.ebi.ac.uk/ena/browser/view/PRJEB48183). We uploaded files in the pod5 raw current format in zipped tar archives. To get access to these tar.gz files navigate to the project page and click on "Show column selection". There you should tick the "submitted_ftp" box to let the archive files entries appear for download. Unpack the tar archives via command line.
 
 ```bash
