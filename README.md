@@ -8,6 +8,10 @@ A template free clustering approach is integrated to detect and study unknown ri
 In addition to the template association, NanoRibolyzer performs polyA tail estimation, finds abundant cut sites, extracts 5' terminal base sequences for motif analysis 
 and detects the relativ abundance of specific RNA modifications. Outputs of NanoRibolyzer can be used to dissect specific subpopulations of ribosomal RNA reads and assess characteristic properties on a single nucleotide resolution level. 
 
+
+
+
+
 ## User guide
 
 ### Requirements
@@ -71,6 +75,11 @@ Is your library cDNA or dRNA based ? DNA or RNA can be selected via drowdown men
 #### Demand
 Would you like to keep RAM usage rather low ? Low or high can be selected via dropdown menu.
 
+
+
+
+
+
 ### Manual usage via nextflow (command line)
 ### Configuration file
 Nanoribolyzer can also be used as a standalone nextflow pipeline via command line. You can clone or download the zipped repository to download the pipeline. Unzip the repository if necessary. For running the pipeline, a configuration file in yaml format is needed. The following entries need to be listed in the config.yaml file.
@@ -98,8 +107,8 @@ This will allow you to run the nanoribolyzer pipeline. Examples for downstream a
 ### Test data
 Test data for the workflow is stored in the folder "data" within this repository and is based on dRNA sequencing. It is just a small dataset to test the successful performance of the tool.   
 
-### Versioning
-Versioning of the packages is controlled via docker containers. The docker containers will be downloaded during the first pipeline run. In the environment files in "envs/other_tools" define which versions were used for building he docker container. In nextflow schema, the dorado container is determined to be pulled from the official ontresearch docker hub. Docker version v0.7.2 was used for the analysis in the publication, but updated versions will follow. 
+
+
 
 
 
