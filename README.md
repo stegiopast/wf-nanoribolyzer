@@ -45,6 +45,7 @@ These installations might take a day of your time (depending on experience 30 mi
 To download NanoRibolyzer, open Epi2Me and navigate to Launch and press the button Import Workflow. A pop-up window will appear in which you should copy the following link: "https://github.com/stegiopast/wf-nanoribolyzer"
 Press download and the workflow should be integrated in Epi2Me. The import of the Nanoribolyzer workflow itself will just take a few seconds. 
 
+
 ### Usage via Epi2Me (GUI)
 Once the download is completed it appears in the Launch section of Epi2Me from where you will be guided through the configuration steps, once you select the pipeline and press the Launch button. Configuration of the pipeline will take place within Epi2ME and the below mentioned Configuration file (config.yaml) is only needed, when starting the pipeline manually. 
 
