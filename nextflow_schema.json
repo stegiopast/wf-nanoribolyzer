@@ -77,7 +77,6 @@
             "required": [
                         "sample_folder",
                         "color",
-                        "script_folder",
                         "basecalling_model",
                         "threads",
                         "sample_type",
