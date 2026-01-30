@@ -80,7 +80,7 @@ Would you like to keep RAM usage rather low ? Low or high can be selected via dr
 
 
 
-### Manual usage via nextflow (command line)
+## Manual usage via nextflow (command line)
 ### Configuration file
 Nanoribolyzer can also be used as a standalone nextflow pipeline via command line. You can clone or download the zipped repository to download the pipeline. Unzip the repository if necessary. For running the pipeline, a configuration file in yaml format is needed. The following entries need to be listed in the config.yaml file.
 
