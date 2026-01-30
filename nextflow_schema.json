@@ -16,7 +16,7 @@
                 "sample_folder": {
                     "title": "Pod5 folder",
                     "type": "string",
-                    "format": "path",
+                    "format": "directory-path",
                     "description": "Path to folder containing pod5 files",
                     "help_text": ""
                 },
@@ -94,12 +94,6 @@
     "allOf": [
         {
             "$ref": "#/definitions/input"
-        },
-        {
-            "$ref": "#/definitions/advanced_options"
-        },
-        {
-            "$ref": "#/definitions/misc"
         }
     ],
     "properties": {
