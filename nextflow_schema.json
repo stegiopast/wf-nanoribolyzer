@@ -66,13 +66,6 @@
                     "description": "RNA or DNA?",
                     "help_text": "provide information whether DNA or RNA is used"
                 },
-                "out_dir": {
-                    "title": "Output directory",
-                    "type": "string",
-                    "format": "path",
-                    "description": "Path to the output directory",
-                    "help_text": "Define an output directory on your system."
-                },
                 "demand": {
                     "title":"Demand",
                     "type": "string",
@@ -84,45 +77,18 @@
             "oneOf": [
                 {
                     "required": [
-                        "sample_folder"
+                        "sample_folder",
+                        "color",
+                        "script_folder",
+                        "basecalling_model",
+                        "threads",
+                        "sample_type",
+                        "demand",
+                        "model_organism",
+                        "gpus_in_use"
                     ]
                 }
             ]
-        },
-        "advanced_options": {
-            "title": "Advanced Options",
-            "type": "object",
-            "fa_icon": "far fa-question-circle",
-            "description": "Advanced options for configuring processes inside the workflow.",
-            "help_text": "These advanced options do not need to be changed for typical use, but allow fine tuning of workflows for users who want more control over the workflow.",
-            "properties": {}
-        },
-        "misc": {
-            "title": "Miscellaneous Options",
-            "type": "object",
-            "description": "Everything else.",
-            "default": "",
-            "properties": {
-                "disable_ping": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Enable to prevent sending a workflow ping."
-                },
-                "help": {
-                    "type": "boolean",
-                    "description": "Display help text.",
-                    "fa_icon": "fas fa-question-circle",
-                    "default": false,
-                    "hidden": true
-                },
-                "version": {
-                    "type": "boolean",
-                    "description": "Display version and exit.",
-                    "fa_icon": "fas fa-question-circle",
-                    "default": false,
-                    "hidden": true
-                }
-            }
         }
     },
     "allOf": [
