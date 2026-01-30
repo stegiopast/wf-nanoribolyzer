@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
-    "title": "stegiopast/wf-nanoribolyzer",
+    "title": "NanoRibolyzer",
     "workflow_title": "NanoRibolyzer",
     "description": "Repository for a nanopore sequencing based ribosomal RNA analysis pipeline",
     "url": "https://github.com/stegiopast/wf-nanoribolyzer",
