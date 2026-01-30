@@ -41,6 +41,14 @@
                     "description": "Select the accuracy of the basecalleing model fast,hac or sup",
                     "help_text": ""
                 },
+                "gpus_in_use": {
+                    "title": "Which GPU should be used ?",
+                    "type": "string",
+                    "enum": ["cuda:0","cuda:1","cuda:2","cuda:3","cuda:4","cuda:0,1","cuda:1,2","cuda:2,3","cuda:3,4","cuda:all"],
+                    "default": "cuda:all",
+                    "description": "Use GPU acceleration for basecalling, (with cuda:0 -> graphics card 0 will be used. cuda:all -> uses all available gpus)",
+                    "help_text": "Enable GPU acceleration for faster basecalling. The GPU usage is mandatory for a time efficient workflow execution."
+                },
                 "threads": {
                     "tile": "Threads",
                     "type": "integer",
