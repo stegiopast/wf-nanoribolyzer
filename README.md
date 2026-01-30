@@ -9,38 +9,46 @@ In addition to the template association, NanoRibolyzer performs polyA tail estim
 and detects the relativ abundance of specific RNA modifications. Outputs of NanoRibolyzer can be used to dissect specific subpopulations of ribosomal RNA reads and assess characteristic properties on a single nucleotide resolution level. 
 
 ## User guide
-To use NanoRibolyzer [Epi2Me](https://labs.epi2me.io/downloads/), [Nextflow](https://www.nextflow.io/docs/latest/install.html) and [Docker](https://docs.docker.com/engine/install/) must be installed.
+
+### Requirements
+
+Depending on the size of the dataset and the sequencing depth the demand of the pipeline varies. With MinION sequenced data and hac models the minimal requirements are:
+
+Hardware | Specs
+ :---: |  :---:
+RAM | 64GB 
+Threads | 12 
+GPU | 16GB VRAM (e.g. NVIDIA GeForce RTX 4080)
+
+Since we were working with PromethIon sequenced data and sup models, we recommend another setup of a much higher quality & price:
+
+Hardware | Specs
+ :---: |  :---:
+RAM | 256GB 
+Threads | 48 
+GPU | 48GB VRAM (e.g. NVIDIA RTX A6000)
+
+Runtime is highly dependent on the size of the dataset and the availabl hardware. A dataset of 10 million ribosomal reads with the recommended PromethION setup takes ~15 hours processing time. The minimal requirements are necessary to run this tool and will approximately run for datasets with the size of ~2 million reads. For bigger datasets the above recommended requirements for PromethION based sequencing are necessary. 
+
+### Installation
+To use NanoRibolyzer [Epi2Me](https://labs.epi2me.io/downloads/), [Nextflow](https://www.nextflow.io/docs/latest/install.html) and [Docker](https://docs.docker.com/engine/install/) must be installed vie command line.
+Alternatively, Docker and Nextflow can also be installed within the Epi2ME graphical user interface. (Settings -> Local -> Open setup) 
 On Windows we recommend to install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and subsequently install Epi2Me, Nextflow and Docker within the command line.
-Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on Linux and WSL.
+Also make sure to install the [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on Linux and WSL to enable the use of GPUs in docker containers.
+These installations might take a day of your time (depending on experience 30 minutes to 1 day). Feel free to contact us via issues in this repository and we will make sure to help you out. These programms have to be installed for all workflows in Epi2ME with computational steps including GPU. 
+
 
 To download NanoRibolyzer, open Epi2Me and navigate to Launch and press the button Import Workflow. A pop-up window will appear in which you should copy the following link: "https://github.com/stegiopast/wf-nanoribolyzer"
-Press download and the Workflow should be integrated in Epi2Me. 
+Press download and the workflow should be integrated in Epi2Me. The import of the Nanoribolyzer workflow itself will just take a few seconds. 
 
+### Usage via Epi2Me (GUI)
+Once the download is completed it appears in the Launch section of Epi2Me from where you will be guided through the configuration steps, once you select the pipeline and press the Launch button. Configuration of the pipeline will take place within Epi2ME and the below mentioned Configuration file (config.yaml) is only needed, when starting the pipeline manually. 
 
-Nanoribolyzer can also be used as a standalone nextflow pipeline via command line. You can clone or download the zipped repository to download the pipeline. Unzip the repository if necessary. For running the pipeline, a configuration file in yaml format is needed. The following entries need to be listed in the config.yaml file.
+### Pod5 folder organization
+Store all pod5 files belonging to a sample in an independent folder. Make sure no other file than files in pod5 formats appear in that folder. 
 
-```
-sample_folder: /path/to/pod5_folder/
-color: blue (orange,red,green)
-script_folder: /path/to/wf-nanoribolyzer/
-out_dir: /path/to/output_dir/
-basecalling_model: sup
-model_organism: Human (Yeast)
-threads: 8
-sample_type: RNA (DNA)
-demand: low (high)
-```
-
-Once the yaml file is established you can run the pipeline with nextflow:
-
-```bash
-nextflow run -params-file /path/to/config.yaml /path/to/wf-nanoribolyzer/main.nf
-```
-
-This will allow you to run the nanoribolyzer pipeline. Examples for downstream analysis after nanoribolyzer processing are included in the jupyter-notebook section of this repository. Test data for the workflow is stored in data and is based on dRNA sequencing.  
-
-## Inputs
-Once the pipeline is integrated in Epi2Me the process can be launched. Click on wf-nanoribolyzer pipline button and click the Launch button. Provide the following information to run the process:
+### Inputs
+The following inputs will be configured within Epi2ME:
 
 #### Pod5 folder
 Absolute path to the pod5 folder which carries the pod5 files of interest for the sample. Click on the small folder icon and select the folder path via file explorer.
@@ -63,8 +71,39 @@ Is your library cDNA or dRNA based ? DNA or RNA can be selected via drowdown men
 #### Demand
 Would you like to keep RAM usage rather low ? Low or high can be selected via dropdown menu.
 
-## Methods
+### Manual usage via nextflow (command line)
+### Configuration file
+Nanoribolyzer can also be used as a standalone nextflow pipeline via command line. You can clone or download the zipped repository to download the pipeline. Unzip the repository if necessary. For running the pipeline, a configuration file in yaml format is needed. The following entries need to be listed in the config.yaml file.
 
+```
+sample_folder: /path/to/pod5_folder/
+color: blue (orange,red,green)
+script_folder: /path/to/wf-nanoribolyzer/
+out_dir: /path/to/output_dir/
+basecalling_model: sup
+model_organism: Human (Yeast)
+threads: 8
+sample_type: RNA (DNA)
+demand: low (high)
+```
+
+Once the yaml file is established you can run the pipeline with nextflow:
+
+```bash
+nextflow run -params-file /path/to/config.yaml /path/to/wf-nanoribolyzer/main.nf
+```
+
+This will allow you to run the nanoribolyzer pipeline. Examples for downstream analysis after nanoribolyzer processing are included in the jupyter-notebook section of this repository. 
+
+### Test data
+Test data for the workflow is stored in the folder "data" within this repository and is based on dRNA sequencing. It is just a small dataset to test the successful performance of the tool.   
+
+### Versioning
+Versioning of the packages is controlled via docker containers. The docker containers will be downloaded during the first pipeline run. In the environment files in "envs/other_tools" define which versions were used for building he docker container. In nextflow schema, the dorado container is determined to be pulled from the official ontresearch docker hub. Docker version v0.7.2 was used for the analysis in the publication, but updated versions will follow. 
+
+
+
+## Methods
 ![General Pipeline](./figures/General_Pipeline.png)
 
 The analysis workflow of NanoRibolyzer starts with the pod5 output format of ONT’s MinKnow. Reads are basecalled using dorado [basecaller](https://github.com/nanoporetech/dorado). All sequenced reads are basecalled and trimmed with [Porechop](https://github.com/rrwick/Porechop). The trimmed reads become aligned with the map-ont flag of [minimap2](https://github.com/lh3/minimap2) to the 45SN1 reference of [hg38](https://www.gencodegenes.org/human/). The ids of reads aligning to 45SN1 are used to filter the original pod5 file. The filtered pod5 file is rebasecalled using the integrated models for modification detection and polyA taillength of dorado. The read ids in the resulting unaligned bam file is used to collect metainformation about reads on a single nucleotide resolution. 
@@ -222,6 +261,14 @@ For the publication of our data, we used the newest models provided with dorado 
 
 All other processes use a [docker environment](https://hub.docker.com/r/stegiopast/nanoribolyzer_other_tools) we built for this project. ("stegiopast/nanoribolyzer_other_tools:latest") 
 The software versions of packages in the environment can be found [here](./envs/other_tools). 
+
+### Data availability
+Data of the below mentioned publication is available on ENA with the project number [PRJEB90082](https://www.ebi.ac.uk/ena/browser/view/PRJEB48183). We uploaded files in the pod5 raw current format in zipped tar archives. To get access to these tar.gz files navigate to the project page and click on "Show column selection". There you should tick the "submitted_ftp" box to let the archive files entries appear for download. Unpack the tar archives via command line.
+
+```bash
+tar -xvf /path/to/filename.tar.gz
+```
+
 
 ## Citation 
 Whenever you use our software or you build up on our work and ideas cite the following paper:
