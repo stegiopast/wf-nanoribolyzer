@@ -146,14 +146,14 @@ process trim_barcodes{
     script:
     """
     mkdir -p chunks
-
     zcat ${fastq_not_trimmed} | split -l 8000000 -d -a 4 - chunks/chunk_
-
     for chunk in chunks/chunk_*; do
         porechop -i "\$chunk" -o "\${chunk}_trimmed" --threads ${params.threads}
+        rm \$chunk
+        cat "\${chunk}_trimmed" >> basecalled.fastq
+        rm "\${chunk}_trimmed"
     done
-
-    cat chunks/chunk_*_trimmed | gzip -1 > basecalled.fastq.gz
+    gzip basecalled.fastq
     """
 }
 
