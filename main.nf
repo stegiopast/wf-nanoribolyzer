@@ -67,6 +67,7 @@ println ""
 process dorado_basecalling{
     label 'dorado_basecaller'
     publishDir "${params.out_dir}", mode: 'copy'
+    stageInMode 'symlink'
     input:
     path(sample_folder)
     val basecalling_model
@@ -74,16 +75,24 @@ process dorado_basecalling{
     output:
     val done
     path('basecalling_output/basecalled.bam'), emit: basecalled_bam
-    path('basecalling_output/sequencing_summary.txt')
+    path('basecalling_output/sequencing_summary.txt'), optional: true
     path('basecalling_output/basecalled_not_trimmed.fastq.gz'), emit: fastq_not_trimmed
-    path('converted_to_pod5/converted.pod5'), emit: converted_pod5
+    path('converted_to_pod5/converted.pod5'), emit: converted_pod5, optional: true
     
     script:
     done = 1
     """ 
     mkdir -p basecalling_output
     mkdir -p converted_to_pod5
-    (ls ${sample_folder}/*.pod5) && export filetype=pod5 || export filetype=fast5 
+
+    if compgen -G "${sample_folder}/*.pod5" > /dev/null; then
+        export filetype=pod5
+    elif compgen -G "${sample_folder}/*.fast5" > /dev/null; then
+        export filetype=fast5
+    else
+        export filetype=bam
+    fi 
+    ################################
     if [ \$filetype == fast5 ]
     then 
         pod5 convert fast5 ${sample_folder}/*.fast5\
@@ -116,21 +125,35 @@ process dorado_basecalling{
           > basecalling_output/basecalled_not_trimmed.fastq.gz
         echo "No conversion needed" > converted_to_pod5/converted.pod5
     fi
+    ###############################
+    if [ \$filetype == bam ]
+    then
+        samtools view --threads ${params.threads} -bh ${sample_folder}/*bam > basecalling_output/basecalled.bam
+        samtools fastq -T "*" --threads ${params.threads} basecalling_output/basecalled.bam | gzip > basecalling_output/basecalled_not_trimmed.fastq.gz
+    fi
     """
 }
+
 
 process trim_barcodes{
     label 'other_tools'
     publishDir "${params.out_dir}/basecalling_output/", mode: 'copy'
+    stageInMode 'symlink'
     input:
         path(fastq_not_trimmed) 
     output:
         path("basecalled.fastq.gz"), emit: basecalled_fastq  
+    script:
     """
-    porechop\
-     -i basecalled_not_trimmed.fastq.gz\
-     -o basecalled.fastq.gz\
-     --threads ${params.threads}
+    mkdir -p chunks
+
+    zcat ${fastq_not_trimmed} | split -l 8000000 -d -a 4 - chunks/chunk_
+
+    for chunk in chunks/chunk_*; do
+        porechop -i "\$chunk" -o "\${chunk}_trimmed" --threads ${params.threads}
+    done
+
+    cat chunks/chunk_*_trimmed | gzip -1 > basecalled.fastq.gz
     """
 }
 
@@ -151,6 +174,7 @@ process trim_barcodes{
 process align_to_45SN1{
     label 'other_tools'
     publishDir "${params.out_dir}/basecalling_output/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(basecalled_fastq) 
         path(reference), stageAs:"reference.fasta"
@@ -193,6 +217,7 @@ process align_to_45SN1{
 process filter_pod5_for_RNA45s_aligning_reads{
     label 'other_tools'
     publishDir "${params.out_dir}/filtered_pod5/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(filtered_bam)
         path(filtered_bai)
@@ -249,6 +274,7 @@ process filter_pod5_for_RNA45s_aligning_reads{
 process rebasecall_filtered_files{
     label 'dorado_basecaller'
     publishDir "${params.out_dir}/filtered_pod5/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(filtered_pod5)
         path(reference), stageAs: "reference.fasta"
@@ -295,6 +321,7 @@ process rebasecall_filtered_files{
 process extract_polyA_table{
     label 'other_tools'
     publishDir "${params.out_dir}/taillength_estimation/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(rebasecalled_bam)
         path(rebasecalled_bam_bai)
@@ -359,6 +386,7 @@ process extract_polyA_table{
 process fragment_analysis_intensity{
     label 'other_tools'
     publishDir "${params.out_dir}/fragment_analysis_intensity/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(filtered_bam)
         path(filtered_bam_bai)
@@ -392,6 +420,7 @@ process fragment_analysis_intensity{
 process template_driven_fragment_analysis{
     label 'other_tools'
     publishDir "${params.out_dir}/template_based_analysis/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(filtered_bam)
         path(filtered_bam_bai)
@@ -425,6 +454,7 @@ process template_driven_fragment_analysis{
 process fragment_based_readtail_analysis{
     label 'other_tools'
     publishDir "${params.out_dir}/readtail_analysis/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(filtered_bam)
         path(filtered_bam_bai)
@@ -453,6 +483,7 @@ process fragment_based_readtail_analysis{
 process visualize_polyA_associated_templates{
     label 'other_tools'
     publishDir "${params.out_dir}/polyA_template_based/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(template_alignment_csv)
         path(tail_esimation_csv)
@@ -481,6 +512,7 @@ process visualize_polyA_associated_templates{
 process visualize_polyA_associated_intensity_clusters{
     label 'other_tools'
     publishDir "${params.out_dir}/polyA_intensity_based_clusters/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(intensity_alignment_csv)
         path(tail_esimation_csv)
@@ -542,6 +574,7 @@ process visualize_polyA_associated_intensity_clusters{
 process visualize_intensity_matrix{
     label 'other_tools'
     publishDir "${params.out_dir}/intensity_matrix/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(alignment_df)
         path(templates)
@@ -568,6 +601,7 @@ process visualize_intensity_matrix{
 process visualize_modifications{
     label 'other_tools'
     publishDir "${params.out_dir}/modification_plots/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(rebasecalled_bam)
         path(rebasecalled_bam_bai)
@@ -602,6 +636,7 @@ process visualize_modifications{
 process visualize_cut_sites{
     label 'other_tools'
     publishDir "${params.out_dir}/cut_site_plots/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(start_sites)
         path(end_sites)
@@ -629,6 +664,7 @@ process visualize_cut_sites{
 process visualize_reference_coverage{
     label 'other_tools'
     publishDir "${params.out_dir}/coverage_plots/", mode:"copy"
+    stageInMode 'symlink'
     input:
         path(template_alignment_csv)
         path(templates)
@@ -657,6 +693,7 @@ process visualize_reference_coverage{
 process check_all_done {
     label 'other_tools'
     publishDir "${params.out_dir}/report/", mode: "copy"
+    stageInMode 'symlink'
     input:
         val visualize_intensity_matrix_done;
         val visualize_polyA_associated_templates;
@@ -687,6 +724,7 @@ process check_all_done {
 process create_report {
     label 'other_tools'
     publishDir "${params.out_dir}/", mode: "copy"
+    stageInMode 'symlink'
     input:
     // Mandatory inputs
     val all_done_verification
