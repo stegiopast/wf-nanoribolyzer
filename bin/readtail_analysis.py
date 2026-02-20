@@ -124,7 +124,7 @@ def fragment_based_readtail_analysis(df_name:str,bamfile_name:str,output_path:st
         with open(f"{output_path}/{fragment}.fasta","a") as fasta_output, \
             open(f"{output_path}/{fragment}_tail_comparison.fasta","a") as fasta_output2, \
             open(f"{output_path}/{fragment}.json", "w") as outfile, \
-            open(f"{output_path}/{fragment}.txt","w") as fasta_output: 
+            open(f"{output_path}/{fragment}.txt","w") as fasta_output3: 
             for read in tqdm(bamfile.fetch(ref_data["ID"],start=max(0,start-2000),end=min(ref_data["Length"],end+2000))):
                 if read.query_name in fragment_id_dict:
                     if read.is_forward:
@@ -190,7 +190,7 @@ def fragment_based_readtail_analysis(df_name:str,bamfile_name:str,output_path:st
             for dictionairy in last_20:
                 string += max(dictionairy.items(), key=operator.itemgetter(1))[0]
             json.dump(last_20, outfile)
-            fasta_output.write(string)
+            fasta_output3.write(string)
     logger.info("Extraction finished")
 #####################################################################################################################################
 #                                                                                                                                   #
