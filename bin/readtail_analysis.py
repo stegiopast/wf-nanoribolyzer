@@ -121,78 +121,76 @@ def fragment_based_readtail_analysis(df_name:str,bamfile_name:str,output_path:st
             fasta_output.write("")
         with open(f"{output_path}/{fragment}_tail_comparison.fasta","w") as fasta_output:
             fasta_output.write("")
-        for read in tqdm(bamfile.fetch(ref_data["ID"],start=max(0,start-2000),end=min(ref_data["Length"],end+2000))):
-            if read.query_name in fragment_id_dict:
-                if read.is_forward:
-                    read_sequence = read.get_forward_sequence()
-                else:
-                    read_sequence = read.query_sequence
-                reversed_read_sequence = read_sequence[::-1]
-                position = 0
-                first_A_met = False
-                nucleotide_counter = 0
-                adenin_counter = 0
-                for nuc_index,nucleotide in enumerate(reversed_read_sequence):
-                    if first_A_met:
-                        if nucleotide == "A":
-                            nucleotide_counter += 1
-                            adenin_counter += 1
-                            position += 1
-                        else:
-                            nucleotide_counter += 1
-                            position += 1
-                            difference = position - nucleotide_counter
-                            if adenin_counter/max(position-difference-1,1) <= 0.5:
-                                #print(position)
-                                difference = position - nucleotide_counter
-                                while (reversed_read_sequence[position] != "A" or (adenin_counter/max(position - difference,1)) < 0.9):
-                                    if position == 0:
-                                        break
-                                    polyA_sequence = read_sequence[-(position):-(difference)]
-                                    adenin_counter = 0
-                                    for i in polyA_sequence:
-                                        if i == "A":
-                                            adenin_counter += 1
-                                    position -= 1 
-                                if position != 0: 
-                                    position += 1
-                                break
+        with open(f"{output_path}/{fragment}.fasta","a") as fasta_output, \
+            open(f"{output_path}/{fragment}_tail_comparison.fasta","a") as fasta_output2, \
+            open(f"{output_path}/{fragment}.json", "w") as outfile, \
+            open(f"{output_path}/{fragment}.txt","w") as fasta_output3: 
+            for read in tqdm(bamfile.fetch(ref_data["ID"],start=max(0,start-2000),end=min(ref_data["Length"],end+2000))):
+                if read.query_name in fragment_id_dict:
+                    if read.is_forward:
+                        read_sequence = read.get_forward_sequence()
                     else:
-                        if nuc_index + 2 == len(reversed_read_sequence):
-                            position = 0
-                            break
-                        if nuc_index > 50:
-                            position = 0
-                            break
-                        if nucleotide == "A" and reversed_read_sequence[nuc_index + 1] == "A" and reversed_read_sequence[nuc_index + 2] == "A":
-                            nucleotide_counter += 1
-                            adenin_counter += 1
-                            first_A_met = True
-                            position = nuc_index 
-                cutoff_sequence = read_sequence[-(position + 20):-(position)]
-                long_cutoff_sequence = read_sequence[-(position + 20):]
-                for index,base in enumerate(cutoff_sequence):
-                    last_20[index][base] += 1
-                if len(cutoff_sequence) == 20:
-                    with open(f"{output_path}/{fragment}.fasta","a") as fasta_output:
+                        read_sequence = read.query_sequence
+                    reversed_read_sequence = read_sequence[::-1]
+                    position = 0
+                    first_A_met = False
+                    nucleotide_counter = 0
+                    adenin_counter = 0
+                    for nuc_index,nucleotide in enumerate(reversed_read_sequence):
+                        if first_A_met:
+                            if nucleotide == "A":
+                                nucleotide_counter += 1
+                                adenin_counter += 1
+                                position += 1
+                            else:
+                                nucleotide_counter += 1
+                                position += 1
+                                difference = position - nucleotide_counter
+                                if adenin_counter/max(position-difference-1,1) <= 0.5:
+                                    #print(position)
+                                    difference = position - nucleotide_counter
+                                    while (reversed_read_sequence[position] != "A" or (adenin_counter/max(position - difference,1)) < 0.9):
+                                        if position == 0:
+                                            break
+                                        polyA_sequence = read_sequence[-(position):-(difference)]
+                                        adenin_counter = 0
+                                        for i in polyA_sequence:
+                                            if i == "A":
+                                                adenin_counter += 1
+                                        position -= 1 
+                                    if position != 0: 
+                                        position += 1
+                                    break
+                        else:
+                            if nuc_index + 2 == len(reversed_read_sequence):
+                                position = 0
+                                break
+                            if nuc_index > 50:
+                                position = 0
+                                break
+                            if nucleotide == "A" and reversed_read_sequence[nuc_index + 1] == "A" and reversed_read_sequence[nuc_index + 2] == "A":
+                                nucleotide_counter += 1
+                                adenin_counter += 1
+                                first_A_met = True
+                                position = nuc_index 
+                    cutoff_sequence = read_sequence[-(position + 20):-(position)]
+                    long_cutoff_sequence = read_sequence[-(position + 20):]
+                    for index,base in enumerate(cutoff_sequence):
+                        last_20[index][base] += 1
+                    if len(cutoff_sequence) == 20:
                         if cutoff_sequence != "":
                             fasta_output.write(f">{read.query_name}\n")
                             fasta_output.write(f"{cutoff_sequence}\n")
-                with open(f"{output_path}/{fragment}_tail_comparison.fasta","a") as fasta_output:
                     if cutoff_sequence != "":
-                        fasta_output.write(f">{read.query_name}\n")
-                        fasta_output.write(f"{cutoff_sequence}\n")
-                        fasta_output.write(f"{long_cutoff_sequence}\n")
-                        fasta_output.write(f"{adenin_counter/max(position - difference,1)}\n")
-        string = ""
-        for dictionairy in last_20:
-            string += max(dictionairy.items(), key=operator.itemgetter(1))[0]
-        
-        with open(f"{output_path}/{fragment}.json", "w") as outfile: 
+                        fasta_output2.write(f">{read.query_name}\n")
+                        fasta_output2.write(f"{cutoff_sequence}\n")
+                        fasta_output2.write(f"{long_cutoff_sequence}\n")
+                        fasta_output2.write(f"{adenin_counter/max(position - difference,1)}\n")
+            string = ""
+            for dictionairy in last_20:
+                string += max(dictionairy.items(), key=operator.itemgetter(1))[0]
             json.dump(last_20, outfile)
-        
-        with open(f"{output_path}/{fragment}.txt","w") as fasta_output:
-                fasta_output.write(string)
+            fasta_output3.write(string)
     logger.info("Extraction finished")
 #####################################################################################################################################
 #                                                                                                                                   #
