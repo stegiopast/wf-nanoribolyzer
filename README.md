@@ -3,7 +3,7 @@
 ![NanoRibolyzer](./figures/Nanoribolyzer_logo.png)
 
 ## Abstract
-NanoRibolyzer is an Epi2Me-compatible tool to analyze ribosomal RNA biogenesis pathway at single nucleotide resolution. 
+NanoRibolyzer is an Epi2Me-compatible tool to analyze the ribosomal RNA biogenesis pathway at single nucleotide resolution. 
 NanoRibolyzer aligns reads to the human RNA45SN1 of hg38. A template based read association approach allows for quantification of known ribosomal intermediates.
 A template free clustering approach is integrated to detect and study unknown ribosomal RNA intermediates. 
 In addition to the template association, NanoRibolyzer performs polyA tail estimation, finds abundant cut sites, extracts 5' terminal base sequences for motif analysis 
