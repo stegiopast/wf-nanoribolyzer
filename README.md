@@ -284,7 +284,5 @@ tar -xvf /path/to/filename.tar.gz
 ## Citation 
 Whenever you use our software or you build up on our work and ideas cite the following paper:
 
-Mapping human pre-rRNA processing and modification at single nucleotide resolution using long read Nanopore sequencing
-Stefan Pastore, Ludivine Wacheul, Lioba Lehmann, Stefan Mündnich, Beat Lutz, Mark Helm, Susanne Gerber, Denis L.J. Lafontaine, Tamer Butto
-bioRxiv 2025.03.01.640970; doi: https://doi.org/10.1101/2025.03.01.640970 
+Pastore, S., Wacheul, L., Lehmann, L. et al. Mapping human pre-rRNA processing and modification at single nucleotide resolution using long read nanopore sequencing. Nat Commun (2026). https://doi.org/10.1038/s41467-026-71164-x
 
