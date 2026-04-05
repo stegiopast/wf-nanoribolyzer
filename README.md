@@ -1,4 +1,3 @@
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/stegiopast/wf-nanoribolyzer/total)
 # NanoRibolyzer
 ![NanoRibolyzer](./figures/Nanoribolyzer_logo.png)
 
