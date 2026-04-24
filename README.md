@@ -180,6 +180,11 @@ All the outputs will be provided in the default workfolder of Epi2Me.
 │   ├── intensity_matrix.html                   # Interactive html file with 50000 most abundant (start site, end site) pairs
 │   └── intensity_matrix.png                    # An image of the intensity matrix used for the clustering approach
 │
+├── modification_plots                          # Folder contains
+│   │
+│   ├── modification_quantification.csv         # Table showing modification ratios and statistics per position on pre-ribosomal template 
+│   └── relative_baseX_modification_abundance.html  # Interactive html file showing modification ratios seperate by canonical bases     
+│
 ├── template_based_analysis
 │   │
 │   ├── template_alignment_df.csv               # List of single aligned reads with aligned sequences reconstructed by cigarstrings, includes start and end sites on the reference. The percentage of overlap with associated fragment is listed. 
